@@ -1,0 +1,71 @@
+---
+# RSS Media Bus - Конфигурация источников v3.0
+
+sources:
+  # === РОССИЙСКИЕ ФЕДЕРАЛЬНЫЕ СМИ ===
+  tass_main:
+    url: "https://tass.ru/rss/v2.xml"
+    name: "ТАСС - Главные новости"
+    category: "news"
+    language: "ru"
+    update_interval: 300  # 5 минут (унифицировано)
+    active: true
+    
+  ria_main:
+    url: "https://ria.ru/export/rss2/archive/index.xml"
+    name: "РИА Новости"
+    category: "news"
+    language: "ru"
+    update_interval: 300  # 5 минут (унифицировано)
+    active: true
+    
+  # === ДЕЛОВЫЕ ИЗДАНИЯ ===
+  rbc_main:
+    url: "http://static.feed.rbc.ru/rbc/logical/footer/news.rss"
+    name: "РБК"
+    category: "business"
+    language: "ru"
+    update_interval: 300  # 5 минут (унифицировано)
+    active: true
+    
+  # === МЕЖДУНАРОДНЫЕ ИСТОЧНИКИ ===
+  reuters_sustainability:
+    url: "https://www.reuters.com/pf/api/v3/content/fetch/articles-by-section-alias-or-id-v1?query=%7B%22arc-site%22%3A%22reuters%22%2C%22called_from_a_component%22%3Atrue%2C%22fetch_type%22%3A%22collection%22%2C%22section_id%22%3A%22%2Fsustainability%2F%22%2C%22size%22%3A20%7D"
+    name: "Reuters Sustainability"
+    category: "sustainability"
+    language: "en"
+    update_interval: 300
+    active: true
+    
+  bbc_science:
+    url: "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml?edition=int"
+    name: "BBC Science & Environment"
+    category: "science"
+    language: "en"
+    update_interval: 300
+    active: true
+    
+  # === СПЕЦИАЛИЗИРОВАННЫЕ ===
+  techcrunch_climate:
+    url: "https://techcrunch.com/category/climate/feed/"
+    name: "TechCrunch Climate"
+    category: "climate_tech"
+    language: "en"
+    update_interval: 300  # 5 минут (унифицировано)
+    active: true
+
+# === ГРУППЫ ИСТОЧНИКОВ ===
+source_groups:
+  russian_news:
+    - tass_main
+    - ria_main
+    - rbc_main
+    
+  international_sustainability:
+    - reuters_sustainability
+    - bbc_science
+    - techcrunch_climate
+    
+  health_related:
+    - tass_main  # для поиска по здоровью
+    - ria_main   # для поиска по здоровью 
