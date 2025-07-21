@@ -9,6 +9,7 @@ import yaml
 import time
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Импорты наших модулей
 from core.source_manager import AsyncRSSParser
@@ -20,6 +21,38 @@ class RSSMonitor:
         self.active_sources = []
         self.rss_parser = None
         self.running = False
+    
+    def extract_domain_from_url(self, url):
+        """Извлекает основной домен из URL для использования как feed_id"""
+        try:
+            parsed = urlparse(url)
+            domain = parsed.netloc.lower()
+            
+            # Убираем www. префикс
+            if domain.startswith('www.'):
+                domain = domain[4:]
+            
+            # Специальная обработка для известных поддоменов
+            domain_mappings = {
+                'static.feed.rbc.ru': 'rbc.ru',
+                'feeds.bbci.co.uk': 'bbc.co.uk',
+                'feeds.reuters.com': 'reuters.com'
+            }
+            
+            if domain in domain_mappings:
+                return domain_mappings[domain]
+            
+            # Для остальных извлекаем основной домен (последние 2 части)
+            parts = domain.split('.')
+            if len(parts) >= 2:
+                # Для доменов вида news.example.com → example.com
+                # Для доменов вида example.com → example.com
+                return '.'.join(parts[-2:])
+            
+            return domain
+        except Exception as e:
+            print(f"⚠️ Ошибка извлечения домена из {url}: {e}")
+            return url  # Возвращаем исходный URL как fallback
         
     async def load_sources(self):
         """Загрузка источников из config/sources.yaml"""
@@ -60,68 +93,73 @@ class RSSMonitor:
             return False
     
     async def initialize_parser(self):
-        """Инициализация RSS парсера"""
+        """Инициализация RSS парсера с реальным Telegram sender"""
         try:
-            # Создаем простой mock DB manager
-            class MockDBManager:
-                def __init__(self):
-                    self.articles = []
-                    self.feeds_info = {}
+            # Импортируем реальный DatabaseManager
+            from core.database import DatabaseManager
+            from outputs.telegram_sender import TelegramSender
+            import json
+            
+            # Создаем реальный DB manager с SQLite
+            db_manager = DatabaseManager()
+            print("✅ Реальная SQLite база данных инициализирована")
+            
+            # Загружаем конфигурацию пользователей
+            try:
+                with open('config/users.yaml', 'r', encoding='utf-8') as f:
+                    users_config = yaml.safe_load(f)
                 
-                def is_article_new(self, url):
-                    return url not in [a.get('url') for a in self.articles]
+                # Ищем активного пользователя с Telegram ботом
+                telegram_sender = None
+                topics_mapping = {}
                 
-                def article_exists(self, link):
-                    """Проверка существования статьи по ссылке (обратная логика к is_article_new)"""
-                    if not link:
-                        return False
-                    return link in [a.get('link') for a in self.articles]
+                # Проверяем структуру файла (users в корне или в секции 'users')
+                users_data = users_config.get('users', users_config)
+                for user_id, user_data in users_data.items():
+                    if not user_data.get('active'):
+                        continue
+                        
+                    telegram_config = user_data.get('telegram', {})
+                    if telegram_config.get('enabled') and telegram_config.get('bot_token'):
+                        bot_token = telegram_config['bot_token']
+                        chat_id = telegram_config['chat_id']
+                        
+                        # Создаем реальный Telegram sender
+                        telegram_sender = TelegramSender(bot_token, chat_id)
+                        print(f"✅ TelegramSender создан для пользователя: {user_data.get('name', user_id)}")
+                        
+                        # Загружаем mapping топиков
+                        try:
+                            with open('config/topics_mapping.json', 'r', encoding='utf-8') as f:
+                                topics_mapping = json.load(f)
+                            print(f"✅ Загружен mapping {len(topics_mapping)} топиков")
+                        except Exception as e:
+                            print(f"⚠️ Ошибка загрузки topics_mapping.json: {e}")
+                        
+                        break
                 
-                def add_article(self, feed_id, title, link, description, content, author, published_date):
-                    """Добавление статьи в mock базу"""
-                    if self.article_exists(link):
-                        return None  # Статья уже существует
+                if not telegram_sender:
+                    print("⚠️ Не найден активный пользователь с Telegram ботом, используем mock sender")
+                    class MockTelegramSender:
+                        def send_article(self, title, description, link, source, keywords=None, categories=None, topic_id=None):
+                            print(f"📱 [MOCK] Отправка: {title[:40]}... от {source}")
+                            return True
+                    telegram_sender = MockTelegramSender()
                     
-                    article_id = len(self.articles) + 1
-                    article_data = {
-                        'id': article_id,
-                        'feed_id': feed_id,
-                        'title': title,
-                        'link': link,
-                        'description': description,
-                        'content': content,
-                        'author': author,
-                        'published_date': published_date
-                    }
-                    self.articles.append(article_data)
-                    print(f"💾 Сохранена статья: {title[:50]}...")
-                    return article_id
-                
-                def save_article(self, article_data):
-                    self.articles.append(article_data)
-                    print(f"💾 Сохранена статья: {article_data.get('title', 'Без заголовка')[:50]}...")
-                
-                def update_feed_info(self, feed_url=None, status=None, last_check=None, articles_count=0, error_msg=None, **kwargs):
-                    """Обновление информации о RSS источнике - принимаем любые аргументы"""
-                    if feed_url:
-                        self.feeds_info[feed_url] = {
-                            'status': status,
-                            'last_check': last_check,
-                            'articles_count': articles_count,
-                            'error_msg': error_msg,
-                            **kwargs
-                        }
+            except Exception as e:
+                print(f"⚠️ Ошибка загрузки конфигурации пользователей: {e}")
+                print("⚠️ Используем mock sender")
+                class MockTelegramSender:
+                    def send_article(self, title, description, link, source, keywords=None, categories=None, topic_id=None):
+                        print(f"📱 [MOCK] Отправка: {title[:40]}... от {source}")
+                        return True
+                telegram_sender = MockTelegramSender()
+                topics_mapping = {}
             
-            # Создаем mock Telegram sender
-            class MockTelegramSender:
-                def send_article(self, title, description, link, source, keywords=None, categories=None, topic_id=None):
-                    print(f"📱 [MOCK] Отправка: {title[:40]}... от {source}")
-                    return True
+            # Сохраняем mapping топиков
+            self.topics_mapping = topics_mapping
             
-            db_manager = MockDBManager()
-            telegram_sender = MockTelegramSender()
-            
-            # Создаем RSS парсер
+            # Создаем RSS парсер с реальным sender
             self.rss_parser = AsyncRSSParser(
                 db_manager=db_manager,
                 telegram_sender=telegram_sender,
@@ -129,7 +167,7 @@ class RSSMonitor:
                 config=None
             )
             
-            print("✅ RSS парсер инициализирован")
+            print("✅ RSS парсер инициализирован с реальным Telegram")
             return True
             
         except Exception as e:
@@ -163,7 +201,30 @@ class RSSMonitor:
                 print(f"📡 Проверка: {source['name']}")
                 
                 # Парсим RSS источник (возвращает количество статей)
-                articles_count = await self.rss_parser.parse_all_feeds_async([('source', source['url'])])
+                # Автоматически извлекаем домен из URL как feed_id
+                domain_id = self.extract_domain_from_url(source['url'])
+                
+                # Определяем topic_id для этого источника
+                topic_id = None
+                if hasattr(self, 'topics_mapping') and self.topics_mapping:
+                    # Ищем по source_id
+                    if source['id'] in self.topics_mapping:
+                        topic_id = self.topics_mapping[source['id']].get('topic_id')
+                        print(f"📱 Топик для {source['name']}: {topic_id}")
+                    else:
+                        print(f"⚠️ Топик для {source['id']} не найден")
+                
+                # Передаем topic_id в RSS парсер (если поддерживается)
+                try:
+                    if topic_id:
+                        # Устанавливаем topic_id в Telegram sender перед парсингом
+                        if hasattr(self.rss_parser.telegram, 'topic_id'):
+                            self.rss_parser.telegram.topic_id = topic_id
+                    
+                    articles_count = await self.rss_parser.parse_all_feeds_async([(domain_id, source['url'])])
+                except AttributeError:
+                    # Fallback если метод не поддерживает topic_id
+                    articles_count = await self.rss_parser.parse_all_feeds_async([(domain_id, source['url'])])
                 
                 # Проверяем что получили число статей
                 if isinstance(articles_count, int) and articles_count >= 0:

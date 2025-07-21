@@ -1,120 +1,111 @@
 ---
 # RSS Media Bus - Конфигурация пользователей v3.0
 
-users:
-  test_user:
-    name: "Test Monitor"
-    description: "Тестовый пользователь для отладки системы"
-    active: true
-    
-    # Telegram настройки (ЗАПОЛНИТЬ ДЛЯ ТЕСТИРОВАНИЯ)
-    telegram:
-      chat_id: ""                    # Заполнить свой chat_id
-      bot_token: ""                  # Заполнить токен бота
-      topic_id: null
-      enabled: false                 # Включить после заполнения токенов
-    
-    # Источники для мониторинга
-    sources:
-      - tass_main
-      - ria_main
-      - rbc_main
-    
-    # Цепочка обработки
-    processors:
-      - name: "keyword_filter"
-        config:
-          keywords: 
-            - "тест"
-            - "новости"
-            - "важно"
-          mode: "include"
-          min_matches: 1
-          
-      - name: "telegram_sender"
-        config:
-          format: "markdown"
-          include_source: true
-          max_preview_length: 200
-
-  # === АВТОМАТИЧЕСКИ ЗАРЕГИСТРИРОВАННЫЕ ПОЛЬЗОВАТЕЛИ ===
+all_sources_rss_user:
+  name: "All Sources RSS Monitor"
+  description: "Пользователь с полным доступом ко всем источникам"
+  active: true
+  registration_method: "telegram_bot"
+  created_at: "2025-07-20T18:10:00.000000"
   
-  yrcnw_user:
-    name: "И Monitor"
-    description: "Автоматически зарегистрированный пользователь через бота"
-    active: true
-    registration_method: "telegram_bot"
-    telegram_id: 2337404
-    username: "yrcnw"
-    first_name: "И"
-    created_at: "2025-07-19T15:12:54.358072"
-    
-    # Telegram настройки
-    telegram:
-      chat_id: "2337404"
-      bot_token: ""                  # Заполнить через /set_token
-      topic_id: null
-      enabled: false                 # Включить после настройки токена
-    
-    # Источники для мониторинга (базовый набор)
-    sources:
-      - tass_main
-      - ria_main
-    
-    # Цепочка обработки (базовая)
-    processors:
-      - name: "telegram_sender"
-        config:
-          format: "markdown"
-          include_source: true
-          max_preview_length: 200
+  # Telegram настройки
+  telegram:
+    chat_id: "-1002883915655"      # ID супергруппы с префиксом -100
+    bot_token: "7000553711:AAGa4WKSGJGheJcydtR9V0L9vnxlK89Twgo"
+    topic_id: null
+    enabled: true                  # Включен, токен настроен
+  
+  # Источники для мониторинга (все 49 источников)
+  sources:
+    - tass.ru
+    - ria.ru
+    - rbc.ru
+    - lenta.ru
+    - interfax.ru
+    - vedomosti.ru
+    - vedomosti_news.ru
+    - vedomosti_issue.ru
+    - rbc_full.ru
+    - gazeta.ru
+    - rg.ru
+    - mk.ru
+    - kp.ru
+    - rt.com
+    - life.ru
+    - aif.ru
+    - 360.ru
+    - pnp.ru
+    - ura.news
+    - iz.ru
+    - pv-magazine.com
+    - ecopolitic.com.ua
+    - euronews_green.ru
+    - ecopravda.ru
+    - electrive.com
+    - renewableenergyworld.com
+    - electrek.co
+    - bloomberg_green.com
+    - bloomberg_esg.com
+    - mit_climate.edu
+    - scitechdaily.com
+    - esgtoday.com
+    - esgnews.com
+    - bbc_science.co.uk
+    - nytimes_environment.com
+    - grist.org
+    - guardian_environment.com
+    - nature_climate.com
+    - eco-business.com
+    - eu-startups.com
+    - ecowatch.com
+    - happyeconews.com
+    - mongabay.com
+    - sustainablebrands.com
+    - techcrunch_climate.com
+    - verge_climate.com
+  
+  # Цепочка обработки (без фильтрации - все новости)
+  processors:
+    - name: "telegram_sender"
+      config:
+        format: "markdown"
+        include_source: true
+        max_preview_length: 300
+        send_all: true
 
-# === ШАБЛОНЫ ДЛЯ АВТОСОЗДАНИЯ ПОЛЬЗОВАТЕЛЕЙ ===
-user_templates:
-  basic_news:
-    name: "Базовые новости"
-    description: "Простая новостная лента без фильтров"
-    telegram:
-      enabled: true
-    sources:
-      - tass_main
-      - ria_main
-    processors:
-      - name: "telegram_sender"
-        config:
-          format: "markdown"
-          
-  filtered_news:
-    name: "Фильтрованные новости"
-    description: "Новости с фильтрацией по ключевым словам"
-    telegram:
-      enabled: true
-    sources:
-      - tass_main
-      - ria_main
-      - rbc_main
-    processors:
-      - name: "keyword_filter"
-        config:
-          keywords: []  # Пользователь задаст сам
-          mode: "include"
-      - name: "telegram_sender"
-        config:
-          format: "markdown"
-          
-  international:
-    name: "Международные новости"
-    description: "Международные источники с переводом"
-    telegram:
-      enabled: true
-    sources:
-      - reuters_sustainability
-      - bbc_science
-      - techcrunch_climate
-    processors:
-      - name: "translator"
-        config:
-          target_language: "ru"
-      - name: "telegram_sender"
-        config:
-          format: "markdown" 
+test_user_new:
+  name: "Test User для проверки системы"
+  description: "Тестовый пользователь для проверки масштабируемости"
+  active: true
+  registration_method: "manual"
+  created_at: "2025-07-20T19:55:00.000000"
+  
+  # Telegram настройки (заглушка - не рабочий)
+  telegram:
+    chat_id: "-1001234567890"      # Тестовый чат
+    bot_token: "123456789:TEST_BOT_TOKEN"  # Тестовый токен
+    topic_id: null
+    enabled: false                 # ВЫКЛЮЧЕН - нет реального бота
+  
+  # Источники (только несколько для теста)  
+  sources:
+    - tass.ru
+    - ria.ru
+    - rbc.ru
+  
+  # Процессоры с фильтрацией
+  processors:
+    - name: "keyword_filter"
+      config:
+        keywords: 
+          - "тест"
+          - "важно" 
+          - "срочно"
+        mode: "include"
+        min_matches: 1
+        
+    - name: "telegram_sender"
+      config:
+        format: "markdown"
+        include_source: true
+        max_preview_length: 200

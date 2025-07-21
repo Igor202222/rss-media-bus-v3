@@ -293,7 +293,7 @@ class AsyncRSSParser:
                 # Определяем нужно ли отправлять статью с настройками источника
                 should_send, matched_keywords = self._should_send_article(article_data, source_settings)
                 
-                # Сохраняем в базу данных
+                # Сохраняем в базу данных с расширенными полями
                 article_id = self.db.add_article(
                     feed_id=feed_id,
                     title=article_data['title'],
@@ -301,7 +301,16 @@ class AsyncRSSParser:
                     description=article_data['description'],
                     content=article_data['content'],
                     author=article_data['author'],
-                    published_date=article_data['published_date']
+                    published_date=article_data['published_date'],
+                    guid=article_data.get('guid'),
+                    category=article_data.get('category'),
+                    tags=article_data.get('tags'),
+                    full_text=article_data.get('full_text'),
+                    media_attachments=article_data.get('media_attachments'),
+                    modification_date=article_data.get('modification_date'),
+                    news_id=article_data.get('news_id'),
+                    content_type=article_data.get('content_type'),
+                    newsline=article_data.get('newsline')
                 )
                 
                 if article_id:
@@ -345,8 +354,10 @@ class AsyncRSSParser:
         return False, []
     
     def _extract_article_data(self, entry):
-        """Извлечение данных из RSS статьи"""
+        """Извлечение данных из RSS статьи - расширенная версия"""
         try:
+            import re
+            
             # Заголовок
             title = entry.get('title', '').strip()
             if not title:
@@ -355,10 +366,12 @@ class AsyncRSSParser:
             # Ссылка
             link = entry.get('link', '').strip()
             
+            # GUID (уникальный идентификатор)
+            guid = entry.get('guid', '') or entry.get('id', '')
+            
             # Описание
             description = entry.get('summary', '') or entry.get('description', '')
             if description:
-                import re
                 description = re.sub(r'<[^>]+>', '', description)
                 description = description.strip()
             
@@ -367,8 +380,18 @@ class AsyncRSSParser:
             if hasattr(entry, 'content') and entry.content:
                 content = entry.content[0].value if entry.content else ''
                 if content:
-                    import re
                     content = re.sub(r'<[^>]+>', '', content).strip()
+            
+            # Полный текст (специальные поля RSS)
+            full_text = ''
+            # Для RBC
+            if hasattr(entry, 'rbc_news_full-text'):
+                full_text = entry['rbc_news_full-text']
+            elif hasattr(entry, 'full_text'):
+                full_text = entry.full_text
+            # Очищаем от HTML
+            if full_text:
+                full_text = re.sub(r'<[^>]+>', '', full_text).strip()
             
             # Автор
             author = entry.get('author', '')
@@ -384,25 +407,109 @@ class AsyncRSSParser:
             else:
                 published_date = datetime.now(timezone.utc)
             
-            # Категории RSS
-            categories = []
+            # Дата модификации
+            modification_date = None
+            if hasattr(entry, 'rbc_news_newsmodifdate'):
+                try:
+                    mod_date_str = entry['rbc_news_newsmodifdate']
+                    # Парсим дату модификации
+                    import email.utils
+                    mod_timestamp = email.utils.parsedate_tz(mod_date_str)
+                    if mod_timestamp:
+                        modification_date = datetime(*mod_timestamp[:6], tzinfo=timezone.utc)
+                except:
+                    pass
+            
+            # Категория
+            category = entry.get('category', '')
+            
+            # Теги из различных источников
+            tags = []
             if hasattr(entry, 'tags'):
-                categories.extend([tag.term for tag in entry.tags if hasattr(tag, 'term')])
-            if hasattr(entry, 'category'):
-                categories.append(entry.category)
+                tags.extend([tag.term for tag in entry.tags if hasattr(tag, 'term')])
+            
+            # Специальные теги для RBC
+            if hasattr(entry, 'rbc_news_tag'):
+                if isinstance(entry['rbc_news_tag'], list):
+                    tags.extend(entry['rbc_news_tag'])
+                else:
+                    tags.append(entry['rbc_news_tag'])
+            
+            # Медиа-вложения
+            media_attachments = []
+            
+            # Enclosures (стандартные вложения RSS)
+            if hasattr(entry, 'enclosures'):
+                for enclosure in entry.enclosures:
+                    media_attachments.append({
+                        'type': 'enclosure',
+                        'url': getattr(enclosure, 'href', ''),
+                        'mime_type': getattr(enclosure, 'type', ''),
+                        'length': getattr(enclosure, 'length', 0)
+                    })
+            
+            # Специальные изображения RBC
+            if hasattr(entry, 'rbc_news_image'):
+                images = entry['rbc_news_image']
+                if not isinstance(images, list):
+                    images = [images]
+                
+                for img in images:
+                    if isinstance(img, dict):
+                        media_attachments.append({
+                            'type': 'image',
+                            'url': img.get('rbc_news_url', ''),
+                            'mime_type': img.get('rbc_news_type', 'image/jpeg'),
+                            'source': img.get('rbc_news_source', ''),
+                            'copyright': img.get('rbc_news_copyright', '')
+                        })
+            
+            # Специальные видео RBC
+            if hasattr(entry, 'rbc_news_video'):
+                video = entry['rbc_news_video']
+                if isinstance(video, dict):
+                    media_attachments.append({
+                        'type': 'video',
+                        'url': video.get('url', ''),
+                        'mime_type': video.get('type', 'video/mp4'),
+                        'copyright': video.get('copyright', '')
+                    })
+            
+            # News ID и тип контента
+            news_id = ''
+            content_type = 'article'
+            newsline = ''
+            
+            # Специальные поля RBC
+            if hasattr(entry, 'rbc_news_news_id'):
+                news_id = entry['rbc_news_news_id']
+            if hasattr(entry, 'rbc_news_type'):
+                content_type = entry['rbc_news_type']
+            if hasattr(entry, 'rbc_news_newsline'):
+                newsline = entry['rbc_news_newsline']
             
             return {
                 'title': title,
                 'link': link,
+                'guid': guid,
                 'description': description,
                 'content': content,
+                'full_text': full_text,
                 'author': author,
                 'published_date': published_date,
-                'categories': categories
+                'modification_date': modification_date,
+                'category': category,
+                'tags': tags,
+                'media_attachments': media_attachments,
+                'news_id': news_id,
+                'content_type': content_type,
+                'newsline': newsline,
+                'categories': tags  # Для обратной совместимости
             }
             
         except Exception as e:
             print(f"⚠️ Ошибка извлечения данных статьи: {e}")
+            traceback.print_exc()
             return None
     
     def _check_keywords(self, article_data, keywords=None):

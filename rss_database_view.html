@@ -1,0 +1,1326 @@
+
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>RSS Media Bus - База данных статей</title>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin: 0;
+                padding: 20px;
+                background: #f5f5f5;
+                line-height: 1.6;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 2.5em;
+                font-weight: 300;
+            }
+            .stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                padding: 30px;
+                background: #f8f9fa;
+            }
+            .stat-card {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                text-align: center;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            .stat-number {
+                font-size: 2em;
+                font-weight: bold;
+                color: #667eea;
+                margin-bottom: 5px;
+            }
+            .stat-label {
+                color: #666;
+                text-transform: uppercase;
+                font-size: 0.8em;
+                letter-spacing: 1px;
+            }
+            .articles {
+                padding: 30px;
+            }
+            .article {
+                border-bottom: 1px solid #eee;
+                padding: 20px 0;
+                transition: background 0.2s;
+            }
+            .article:hover {
+                background: #f8f9fa;
+                margin: 0 -20px;
+                padding: 20px;
+                border-radius: 5px;
+            }
+            .article:last-child {
+                border-bottom: none;
+            }
+            .article-title {
+                font-size: 1.2em;
+                font-weight: 600;
+                margin-bottom: 10px;
+                color: #333;
+            }
+            .article-title a {
+                color: #333;
+                text-decoration: none;
+            }
+            .article-title a:hover {
+                color: #667eea;
+            }
+            .article-meta {
+                display: flex;
+                gap: 15px;
+                margin-bottom: 10px;
+                font-size: 0.9em;
+                color: #666;
+            }
+            .source-tag {
+                background: #667eea;
+                color: white;
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 0.8em;
+            }
+            .date {
+                color: #999;
+            }
+            .description {
+                color: #666;
+                line-height: 1.5;
+            }
+            .search {
+                padding: 20px 30px;
+                background: #f8f9fa;
+                border-bottom: 1px solid #eee;
+            }
+            .search input {
+                width: 100%;
+                padding: 12px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                font-size: 1em;
+            }
+            .filter-buttons {
+                margin-top: 15px;
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            .filter-btn {
+                background: #e9ecef;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 20px;
+                cursor: pointer;
+                transition: background 0.2s;
+                font-size: 0.9em;
+            }
+            .filter-btn:hover, .filter-btn.active {
+                background: #667eea;
+                color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📡 RSS Media Bus</h1>
+                <p>База данных статей</p>
+                <p style="opacity: 0.8;">Обновлено: 19.07.2025 23:36</p>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number">209</div>
+                    <div class="stat-label">Всего статей</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">Источников</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Доменных источников</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100</div>
+                    <div class="stat-label">Сегодня</div>
+                </div>
+            </div>
+            
+            <div class="search">
+                <input type="text" id="searchInput" placeholder="🔍 Поиск по заголовкам и описаниям...">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" onclick="filterBySource('all')">Все источники</button>
+                    <button class="filter-btn" onclick="filterBySource('source')">SOURCE (133)</button>
+                    <button class="filter-btn" onclick="filterBySource('ria.ru')">RIA (39)</button>
+                    <button class="filter-btn" onclick="filterBySource('tass.ru')">TASS (30)</button>
+                    <button class="filter-btn" onclick="filterBySource('rbc.ru')">RBC (6)</button>
+                    <button class="filter-btn" onclick="filterBySource('ria_main')">RIA (1)</button>
+                </div>
+            </div>
+            
+            <div class="articles" id="articlesContainer">
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/ugroza-2030211297.html" target="_blank">В Липецкой области объявили опасность атаки БПЛА</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:34:46</span>
+                        <span class="date">📰 2025-07-19 20:33:14</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/samolet-2030211208.html" target="_blank">В Шереметьево сняли ограничения для воздушных судов</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:34:46</span>
+                        <span class="date">📰 2025-07-19 20:31:54</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/mezhdunarodnaya-panorama/24558681" target="_blank">WSJ: Бессент пытается убедить Трампа не увольнять главу ФРС</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:34:44</span>
+                        <span class="date">📰 2025-07-19 20:29:29</span>
+                    </div>
+                    <div class="description">По данным газеты, глава Минфина США считает, что отставка Джерома Пауэлла может негативно сказаться на состоянии американской экономики и рынка</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/ekonomika/24558687" target="_blank">В аэропорту Шереметьево сняли временные ограничения</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:34:44</span>
+                        <span class="date">📰 2025-07-19 20:29:17</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/proisshestviya/24558677" target="_blank">В Липецкой области объявили красный уровень угрозы атаки дронов</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:34:44</span>
+                        <span class="date">📰 2025-07-19 20:28:33</span>
+                    </div>
+                    <div class="description">Об этом сообщил губернатор региона Игорь Артамонов</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/mezhdunarodnaya-panorama/24558675" target="_blank">NYT: Трамп и Эпштейн дружили на протяжении 15 лет</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:34:44</span>
+                        <span class="date">📰 2025-07-19 20:27:31</span>
+                    </div>
+                    <div class="description">Президент США и обвиненный в растлении несовершеннолетних финансист познакомились примерно в 1990 году, регулярно общались, бывали друг у друга в гостях и организовывали вечеринки, пишет газета</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/proisshestviya/24558669" target="_blank">Добровольцы присоединились к ликвидации последствий обстрела Донецка</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:27:46</span>
+                        <span class="date">📰 2025-07-19 20:22:25</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/ekonomika/24558663" target="_blank">Во Внуково нет очередей и скоплений людей после снятия ограничений</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:27:46</span>
+                        <span class="date">📰 2025-07-19 20:19:59</span>
+                    </div>
+                    <div class="description">В аэропорту сообщили, что осуществляется организация вылетов задержанных самолетов</div>
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/ssha-2030210625.html" target="_blank">Содержащийся в тюрьме Алькатрас мигрант назвал ее концлагерем</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:20:50</span>
+                        <span class="date">📰 2025-07-19 20:19:38</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/proisshestviya/24558659" target="_blank">В Крыму в ДТП погибли два человека</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:20:48</span>
+                        <span class="date">📰 2025-07-19 20:12:13</span>
+                    </div>
+                    <div class="description">Еще пятеро пострадали, сообщили в УМВД по региону</div>
+                </div>
+                <div class="article" data-source="rbc.ru">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/686fd1039a794730159c59b1" target="_blank">Рубио распорядился аннулировать визу бразильского судьи из-за Болсонару</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РБК</span>
+                        <span class="date">📅 2025-07-19 20:13:54</span>
+                        <span class="date">📰 2025-07-19 19:59:17</span>
+                    </div>
+                    <div class="description">Госсекретарь США Марко Рубио распорядился аннулировать визу судьи верховного суда Бразилии Александра де Мораеса и его соратников.</div>
+                </div>
+                <div class="article" data-source="rbc.ru">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/687bc7ba9a79473ade01a24a" target="_blank">Домодедово, Жуковский и Внуково сняли ограничения на полеты</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РБК</span>
+                        <span class="date">📅 2025-07-19 20:13:54</span>
+                        <span class="date">📰 2025-07-19 19:29:38</span>
+                    </div>
+                    <div class="description">Ограничения вводили на фоне атаки беспилотников — Собянин сообщил, что на подлете к Москве сбили пятый дрон</div>
+                </div>
+                <div class="article" data-source="rbc.ru">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/politics/19/07/2025/687abc5b9a79473350a90b5b" target="_blank">На подлете к Москве сбили пятый дрон</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РБК</span>
+                        <span class="date">📅 2025-07-19 20:13:54</span>
+                        <span class="date">📰 2025-07-19 19:20:26</span>
+                    </div>
+                    <div class="description">Силы противовоздушной обороны сбили еще один летевший на Москву беспилотник, сообщил мэр столицы Сергей Собянин в своем телеграм-канале.</div>
+                </div>
+                <div class="article" data-source="rbc.ru">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/686e52cf9a79477a5322e11f" target="_blank">Орбан заявил, что Венгрия не примет бюджет ЕС из-за помощи Украине</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РБК</span>
+                        <span class="date">📅 2025-07-19 20:13:54</span>
+                        <span class="date">📰 2025-07-19 19:14:55</span>
+                    </div>
+                    <div class="description">Венгрия не примет предложенный Еврокомиссией проект бюджета Евросоюза на 2028-2034 годы, потому что он предусматривает выделение венгерских денег Украине.</div>
+                </div>
+                <div class="article" data-source="rbc.ru">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/676ac2f99a7947d349f97ff7" target="_blank">Украинский омбудсмен предложила отменить особый статус русского языка</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РБК</span>
+                        <span class="date">📅 2025-07-19 20:13:54</span>
+                        <span class="date">📰 2025-07-19 18:46:52</span>
+                    </div>
+                    <div class="description">Языковой омбудсмен Украины Ивановская заявила, что нужно устранить неравенство в законодательстве и отменить особый статус русского языка в Конституции страны. Москва неоднократно указывала на дискриминацию русского на Украине</div>
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/dtp-2030209712.html" target="_blank">В ДТП на западе Крыма погибли два человека</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 20:09:07</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/polsha-2030209470.html" target="_blank">В Польше назначили дату инаугурации нового президента</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 20:05:06</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/zaporozhe-2030209295.html" target="_blank">Украинские СМИ сообщили о взрыве в подконтрольном Киеву Запорожье</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 20:01:27</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/pozhar-2030209080.html" target="_blank">На склоне горы Машук в Пятигорске загорелась сухая растительность</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:57:44</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/moskva-2030208805.html" target="_blank">МЧС предупредило о дожде, граде и ветре в Москве и Подмосковье</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:55:43</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/poezd-2030208578.html" target="_blank">В США сошел с рельсов поезд с химикатами</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:50:58</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/rosaviatsiya-2030208486.html" target="_blank">Во Внуково, Домодедово и Жуковском сняли временные ограничения</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:50:06</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/ukraina-2030208014.html" target="_blank">Депутат Рады раскрыл секретные планы Запада против России</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:49:50</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/izrail-2030208232.html" target="_blank">Лидер друзов в Израиле призвал Ливан участвовать в переговорах по Сирии</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:47:50</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/opasnost-2030207663.html" target="_blank">В Липецкой области объявили опасность атаки беспилотников</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:45:55</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/ukraina-2030207490.html" target="_blank">В США озвучили печальную для Украины правду</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:42:43</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/ogranicheniya-2030207321.html" target="_blank">В Шереметьево снова ввели временные ограничения</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:39:37</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/bespilotnik-2030207141.html" target="_blank">ПВО сбила еще один летевший на Москву беспилотник</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:37:59</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/sheremetevo-2030206593.html" target="_blank">В Шереметьево сняли временные ограничения</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:30:26</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/frantsija-2030205707.html" target="_blank">Французский Ним установил комендантский час для несовершеннолетних</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:28:44</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/rosaviatsiya-2030206468.html" target="_blank">В Жуковском и Домодедово ввели временные ограничения</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:28:25</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/zelenskiy-2030206306.html" target="_blank">&quot;Давно потеряли&quot;. На Западе раскрыли правду о Зеленском</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:26:59</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/chp-2030205879.html" target="_blank">В Ростовской области объявили опасность атаки беспилотников</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:23:11</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/sobyanin-2030205586.html" target="_blank">ПВО пресекла очередную попытку атаковать Москву БПЛА</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:16:12</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/opasnost-2030205416.html" target="_blank">На Кубани объявили беспилотную опасность</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:13:02</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/izrail-2030205238.html" target="_blank">Лидер друзской общины Израиля призвал сохранить перемирие в Сувейде</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:11:50</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/film-2030205058.html" target="_blank">В Ереване объявили победителей кинофестиваля &quot;Золотой абрикос&quot;</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:09:06</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/izrail-2030204893.html" target="_blank">ЦАХАЛ сообщила о ликвидации главы форпоста &quot;Хезболлы&quot; на юге Ливана</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:07:00</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/bpla-2030204497.html" target="_blank">В Липецкой области объявили воздушную опасность</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:01:38</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/gosdep-2030204275.html" target="_blank">Сотрудники Госдепа считают, что сокращения навредят работе ведомства</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 19:01:22</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/opasnost-2030204106.html" target="_blank">В Белгородской области объявили опасность атаки беспилотников</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 18:57:56</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/turtsija-2030203940.html" target="_blank">Турция ждет от сторон конкретики по переговорам по Украине, заявил источник</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 18:55:15</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/britanija-2030203219.html" target="_blank">В Британии задержали более сотни митингующих в поддержку Palestine Action</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 18:42:00</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/rosaviatsiya-2030203115.html" target="_blank">В Шереметьево ввели временные ограничения</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 18:40:34</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/rossija-2030202932.html" target="_blank">Источник рассказал о готовности России к новому раунду переговоров</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 18:38:52</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/vsu-2030202512.html" target="_blank">При обстреле ВСУ поселка Красный Партизан в ДНР погиб мирный житель</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 18:35:18</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/front-2030202313.html" target="_blank">Народный фронт оперативно помог застрявшим в Ростовской области пассажирам</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 20:13:52</span>
+                        <span class="date">📰 2025-07-19 18:34:34</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/ekonomika/24558641" target="_blank">Max вошел в топ-10 самых популярных приложений в Google Play в России</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 20:05:17</span>
+                    </div>
+                    <div class="description">Max также находится на втором месте среди сервисов для коммуникации</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/proisshestviya/24558651" target="_blank">В Запорожье произошел взрыв</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 20:01:28</span>
+                    </div>
+                    <div class="description">В городе объявили воздушную тревогу</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/sport/24558645" target="_blank">В &quot;Спартаке&quot; остались недовольны судейством игры с махачкалинским &quot;Динамо&quot;</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 20:01:11</span>
+                    </div>
+                    <div class="description">Гендиректор московского клуба Олег Малышев заявил, что "Спартак" обратится в ЭСК РФС</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/ekonomika/24558625" target="_blank">В аэропортах Внуково, Домодедово и Жуковский сняли временные ограничения</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:47:39</span>
+                    </div>
+                    <div class="description">В Росавиации сообщили, что эти меры принимались для обеспечения безопасности полетов</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/ekonomika/24558607" target="_blank">В аэропорту Шереметьево ввели временные ограничения</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:37:00</span>
+                    </div>
+                    <div class="description">В Росавиации сообщили, что эти меры необходимы для обеспечения безопасности полетов</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/sport/24558591" target="_blank">&quot;Спартак&quot; обыграл махачкалинское &quot;Динамо&quot; в первом туре чемпионата России по футболу</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:33:52</span>
+                    </div>
+                    <div class="description">Встреча завершилась со счетом 1:0</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/obschestvo/24558581" target="_blank">МЧС предупредило о ливне, грозе и граде в Московском регионе</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:31:33</span>
+                    </div>
+                    <div class="description">Такая погода ожидается 20 июля</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/obschestvo/24558561" target="_blank">В Псковскую область переселились более 700 соотечественников за полгода</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:30:21</span>
+                    </div>
+                    <div class="description">Губернатор региона Михаил Ведерников сообщил, что им помогают на всех этапах, от оформления документов до трудоустройства</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/ekonomika/24558569" target="_blank">В аэропортах Домодедово и Жуковский ввели временные ограничения</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:26:01</span>
+                    </div>
+                    <div class="description">В Росавиации сообщили, что эти меры необходимы для обеспечения безопасности полетов</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/proisshestviya/24558557" target="_blank">В Ельце и Елецком районе Липецкой области объявили угрозу атаки БПЛА</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:25:30</span>
+                    </div>
+                    <div class="description">Об этом сообщил губернатор региона Игорь Артамонов</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/ekonomika/24558563" target="_blank">В аэропорту Шереметьево сняли временные ограничения</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:25:05</span>
+                    </div>
+                    <div class="description">В Росавиации сообщили, что эта мера принималась для обеспечения безопасности полетов</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/proisshestviya/24558545" target="_blank">Собянин: система ПВО сбила два летевших на Москву БПЛА</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:13:42</span>
+                    </div>
+                    <div class="description">Мэр столицы сообщил, что на месте падения обломков работают специалисты экстренных служб</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/kultura/24558525" target="_blank">Этери Бериашвили выступила с концертом на сцене музея-заповедника &quot;Архангельское&quot;</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:12:06</span>
+                    </div>
+                    <div class="description">Певица исполнила более 20 музыкальных произведений</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/ekonomika/24558537" target="_blank">Экс-еврокомиссар Ферхойген: антироссийские санкции обернулись против ЕС</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:11:21</span>
+                    </div>
+                    <div class="description">Объективные данные показывают, что санкционная политика нанесла ущерб прежде всего ее авторам, в первую очередь Германии, указал бывший вице-президент Еврокомиссии</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/ekonomika/24558529" target="_blank">Bild: Германия может столкнуться с проблемой нехватки электроэнергии</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:09:21</span>
+                    </div>
+                    <div class="description">По данным газеты, в Минэкономики сомневаются, что курс на безграничное строительство ветропарков и солнечных установок оправдывает себя</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/proisshestviya/24558519" target="_blank">В Липецкой области объявили воздушную опасность</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 19:00:16</span>
+                    </div>
+                    <div class="description">Об этом сообщил губернатор региона Игорь Артамонов</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/sport/24558495" target="_blank">Три гола &quot;Спартака&quot; отменили в первом тайме матча РПЛ против махачкалинского &quot;Динамо&quot;</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 18:42:50</span>
+                    </div>
+                    <div class="description">После первого тайма красно-белые выигрывают со счетом 1:0</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/ekonomika/24558477" target="_blank">В аэропорту Шереметьево ввели временные ограничения</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 20:13:50</span>
+                        <span class="date">📰 2025-07-19 18:39:44</span>
+                    </div>
+                    <div class="description">Они необходимы для обеспечения безопасности полетов, указала Росавиация</div>
+                </div>
+                <div class="article" data-source="rbc.ru">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/society/07/06/2024/666290f09a7947016bf41594" target="_blank">Китай начал строительство ГЭС на юго-востоке Тибета</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РБК</span>
+                        <span class="date">📅 2025-07-19 18:33:26</span>
+                        <span class="date">📰 2025-07-19 18:31:08</span>
+                    </div>
+                    <div class="description">Китай приступил к строительству гидроэлектростанции в нижнем течении реки Ярлунг-Цанпо на юго-востоке Тибета.</div>
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/tramp-2030201828.html" target="_blank">Трамп и Эпштейн на протяжении многих лет были друзьями, пишет NYT</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 18:31:58</span>
+                        <span class="date">📰 2025-07-19 18:29:43</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/zelenskij-2030201664.html" target="_blank">Зеленский утвердил новый состав совета СНБО Украины</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 18:31:58</span>
+                        <span class="date">📰 2025-07-19 18:29:23</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/kultura/24558465" target="_blank">Захарова сообщила о работе над совместным треком с рэпером Птахой</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 18:31:56</span>
+                        <span class="date">📰 2025-07-19 18:27:03</span>
+                    </div>
+                    <div class="description">Около двух недель назад было предварительное демо, указала официальный представитель МИД России</div>
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/evropa-2030201413.html" target="_blank">Бывший член ЕК призвал Европу искать понимание с Россией</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 18:27:29</span>
+                        <span class="date">📰 2025-07-19 18:26:33</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="ria.ru">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/ukraina-2030201561.html" target="_blank">Источник: Киев предложил Москве новый раунд переговоров на следующей неделе</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">РИА Новости</span>
+                        <span class="date">📅 2025-07-19 18:27:29</span>
+                        <span class="date">📰 2025-07-19 18:25:42</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/proisshestviya/24558453" target="_blank">Пушилин сообщил, что в ДНР из-за атак ВСУ погиб человек</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 18:27:27</span>
+                        <span class="date">📰 2025-07-19 18:24:07</span>
+                    </div>
+                    <div class="description">Еще пять получили ранения, заявил глава республики</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/politika/24558471" target="_blank">ТАСС подтвердили предложение Украины о раунде переговоров на следующей неделе</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 18:27:27</span>
+                        <span class="date">📰 2025-07-19 18:23:46</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/ekonomika/24558449" target="_blank">Куряне, чье жилье пострадало от атак ВСУ, получат по 195 тыс. рублей</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 18:27:27</span>
+                        <span class="date">📰 2025-07-19 18:22:29</span>
+                    </div>
+                    <div class="description">Врио губернатора области Александр Хинштейн отметил, что решение касается тех, кто из-за повреждений временно не может оставаться в своем доме и получил выплату в 150 тыс. рублей</div>
+                </div>
+                <div class="article" data-source="tass.ru">
+                    <div class="article-title">
+                        <a href="https://tass.ru/sport/24558463" target="_blank">Комличенко положительно оценил свой дебют в составе &quot;Локомотива&quot; в РПЛ</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ТАСС</span>
+                        <span class="date">📅 2025-07-19 18:27:27</span>
+                        <span class="date">📰 2025-07-19 18:21:38</span>
+                    </div>
+                    <div class="description">"Локомотив" в первом туре РПЛ обыграл "Сочи"</div>
+                </div>
+                <div class="article" data-source="ria_main">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/ukraina-2030201194.html" target="_blank">СМИ узнали о неожиданном решении США по поставкам Patriot Украине</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">ria_main</span>
+                        <span class="date">📅 2025-07-19 18:24:38</span>
+                        <span class="date">📰 2025-07-19 18:19:52</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/686b79379a7947c2556cf896" target="_blank">В РЖД сообщили о задержке 75 поездов после утренней атаки дронов</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:17:27</span>
+                        <span class="date">📰 2025-07-19 18:14:03</span>
+                    </div>
+                    <div class="description">Из-за повреждения контактной сети на перегоне Лихая&nbsp;&mdash; Замчалово после падения обломков БПЛА с задержками следуют 75 пассажирских поездов, сообщила пресс-служба РЖД в телеграм-канале.</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/687a86299a79472b72c4432d" target="_blank">Аэропорт Внуково во второй раз за день приостановил полеты</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:17:27</span>
+                        <span class="date">📰 2025-07-19 17:41:13</span>
+                    </div>
+                    <div class="description">В аэропорту Внуково во второй раз за день ввели временные ограничения на прием и отправку воздушных судов, сообщил представитель Росавиации Артем Кореняко в своем телеграм-канале.</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://ria.ru/20250719/festival-2030200931.html" target="_blank">В столице прошел первый спортивный фестиваль &quot;Олимпийская Москва&quot;</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:17:25</span>
+                        <span class="date">📰 2025-07-19 18:14:08</span>
+                    </div>
+                    
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://tass.ru/sport/24558431" target="_blank">Николай Колесников стал вторым в заплыве на 200 м вольным стилем на Универсиаде</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:17:23</span>
+                        <span class="date">📰 2025-07-19 18:11:08</span>
+                    </div>
+                    <div class="description">Для российского пловца эта медаль стала второй на соревнованиях в Германии</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/politics/26/05/2025/6833f01e9a7947663d851400" target="_blank">FT узнала о предупреждении Токио своим фирмам на Тайване на случай атаки</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 17:59:09</span>
+                    </div>
+                    <div class="description">«Вы будете предоставлены сами себе, если вложите значительные активы в Тайвань», — такое предупреждение передали японские дипломаты сотрудникам своих компаний, отвечающим за риски</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/politics/24/05/2025/6831af4d9a794719af80fd3f" target="_blank">Минсельхоз США уволил сотрудников из России и Китая из-за безопасности</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 17:48:06</span>
+                    </div>
+                    <div class="description">Министерство сельского хозяйства США уволило 70 иностранных сотрудников из стран, «вызывающих обеспокоенность». Речь идет о России, Китае, Северной Корее и Иране, уточняет Fox News</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/687bd6ca9a794763c4ecfb99" target="_blank">Аэропорт Внуково во второй раз за день приостановил полеты</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 17:41:13</span>
+                    </div>
+                    <div class="description">В аэропорту Внуково во второй раз за день ввели временные ограничения на прием и отправку воздушных судов, сообщил представитель Росавиации Артем Кореняко в своем телеграм-канале.</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/society/29/04/2025/681094719a7947c933e282b7" target="_blank">В АТОР сообщили, что на перевернувшемся во Вьетнаме судне не было россиян</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 17:31:00</span>
+                    </div>
+                    <div class="description">На потерпевшем крушение туристическом судне Wonder Sea во Вьетнаме не было российских туристов, сообщили в Ассоциации туроператоров России (АТОР).</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/sport/27/06/2025/685e5bff9a79473c1eef9f76" target="_blank">Российская Team Spirit выиграла Кубок мира в Dota 2 и получила $1 млн</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 17:26:17</span>
+                    </div>
+                    <div class="description">В решающем матче российская команда, двукратный чемпион The International, победила Team Falcons из Саудовской Аравии</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/politics/16/07/2025/6877d1089a7947682ad074cd" target="_blank">Зеленский сообщил о предложении Москве провести новые переговоры</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 17:19:26</span>
+                    </div>
+                    <div class="description">Украинская делегация предложила российской стороне провести новые переговоры на следующей неделе, заявил Зеленский. Он отметил, что динамику встреч нужно увеличивать. Последний раз стороны встречались больше месяца назад — 2 июня</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/687021f39a79471878a5bbc5" target="_blank">В Дагестане перевернулся грузовик с 18 детьми в кузове</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 17:10:34</span>
+                    </div>
+                    <div class="description">В селе Салта Гунибского района Дагестана перевернулся грузовой автомобиль, в кузове которого находились 18 несовершеннолетних, сообщили в управлении СК по республике.</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/society/15/01/2025/6787e9bd9a794738d5bb74fe" target="_blank">Азербайджан решил подать иск против России из-за крушения самолета AZAL</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 17:09:24</span>
+                    </div>
+                    <div class="description">Азербайджан готовит международный иск против России из-за крушения самолета AZAL, заявил Алиев. Он отметил, что за прошедшие с момента катастрофы семь месяцев Азербайджан не получил ответа от российской стороны</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/politics/17/07/2025/6878a05b9a7947b52554a1bf" target="_blank">В Раде заявили, что уровень бедности на Украине вырос до 37%</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 17:02:00</span>
+                    </div>
+                    <div class="description">С февраля 2022 года уровень бедности на Украине вырос почти вдвое&nbsp;&mdash; до 37%, заявил глава финансового комитета Верховной рады Даниил Гетманцев в эфире &laquo;Новини LIVE&raquo;.</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/sport/18/07/2025/68791af49a7947e6de159237" target="_blank">«Локомотив» разгромил «Сочи» в первом туре РПЛ, забив три гола в концовке</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 16:59:11</span>
+                    </div>
+                    <div class="description">Встреча завершилась со счетом 3:0, «Локомотив» забил трижды в период с 81-й по 87-ю минуту</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/687aac639a7947f60a7ea7f9" target="_blank">Аэропорты Внуково и Домодедово возобновили работу</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 16:40:33</span>
+                    </div>
+                    <div class="description">В московских аэропортах Внуково и Домодедово отменили ограничения на прием и отправку рейсов, сообщил представитель Росавиации Артем Кореняко в телеграм-канале.</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/politics/04/06/2025/684074899a79472c7a300cac" target="_blank">Европарламент исключил вступление Грузии в ЕС при «авторитарном курсе»</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 16:23:44</span>
+                    </div>
+                    <div class="description">Европарламент заявил, что не признает действующее правительство Грузии легитимным и требует проведения честных выборов в стране. Пока они не состоятся, Грузия не сможет стать членом Евросоюза, подчеркнули в Европарламенте</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/687b28779a79470ed44fb396" target="_blank">Над территорией России за четыре часа сбили 27 украинских беспилотников</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 16:21:23</span>
+                    </div>
+                    <div class="description">В период с 15:00 мск до 19:00 мск дежурные средства ПВО перехватили и уничтожили 27 украинских беспилотников, сообщило Минобороны в своем телеграм-канале.</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/sport/17/07/2025/687874579a7947283594ae6a" target="_blank">Овечкин рассказал, что хоккеисты пытались добиться допуска на Олимпиаду</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 16:13:25</span>
+                    </div>
+                    <div class="description">В IIHF в мае сообщили, что сборная России не вошла в окончательный состав участников олимпийского турнира</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/6863b4209a794718c6b796c8" target="_blank">Последствия удара по центру Донецка. Видео</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 16:09:27</span>
+                    </div>
+                    <div class="description">Мэр Донецка Алексей Кулемзин в своем телеграм-канале рассказал о последствиях ракетного обстрела Киевского района Донецка Вооруженными силами Украины (ВСУ).</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/photoslider/687bbfa19a7947763a82171a" target="_blank">Обстановка в Донецке</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 15:57:09</span>
+                    </div>
+                    <div class="description">Обстановка в Донецке</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/67c817879a79472ccc13c9c9" target="_blank">Глава Днепропетровской области заявил о массированной атаке в Павлограде</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 15:46:39</span>
+                    </div>
+                    <div class="description">Город Павлоград в Днепропетровской области, обеспечивающий снабжение украинских войск под Красноармейском и в районе границы Днепропетровской области с ДНР, ночью подвергся массированной атаке.</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/rbcfreenews/687ada459a7947a360d4a98f" target="_blank">По направлению в Крым и с полуострова задержались 16 поездов</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 15:36:37</span>
+                    </div>
+                    <div class="description">Задерживаются 16 пассажирских поездов, следующих в Крым и обратно, сообщил перевозчик &laquo;Гранд Сервис Экспресс&raquo; в телеграм-канале, ссылаясь на данные на 16:00 мск.</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/photoslider/687bb7729a79476b02d8afe6" target="_blank">Последствия крушения круизного лайнера в бухте Халонг во Вьетнаме</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 15:27:45</span>
+                    </div>
+                    <div class="description">Последствия крушения круизного лайнера в бухте Халонг во Вьетнаме</div>
+                </div>
+                <div class="article" data-source="source">
+                    <div class="article-title">
+                        <a href="https://www.rbc.ru/sport/19/07/2025/687b425e9a79479f12264530" target="_blank">Бублик 13-й раз в карьере вышел в финал турнира ATP</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="source-tag">Смешанные источники</span>
+                        <span class="date">📅 2025-07-19 18:10:29</span>
+                        <span class="date">📰 2025-07-19 15:27:19</span>
+                    </div>
+                    <div class="description">Представитель Казахстана в полуфинале в Гштааде победил француза Артюра Казо и за титул сразиться с аргентинцем Хуаном-Мануэлем Серундоло</div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            // Поиск по статьям
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const articles = document.querySelectorAll('.article');
+                
+                articles.forEach(article => {
+                    const title = article.querySelector('.article-title').textContent.toLowerCase();
+                    const description = article.querySelector('.description');
+                    const descText = description ? description.textContent.toLowerCase() : '';
+                    
+                    if (title.includes(searchTerm) || descText.includes(searchTerm)) {
+                        article.style.display = 'block';
+                    } else {
+                        article.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Фильтр по источникам
+            function filterBySource(source) {
+                const articles = document.querySelectorAll('.article');
+                const buttons = document.querySelectorAll('.filter-btn');
+                
+                // Обновляем активную кнопку
+                buttons.forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+                
+                articles.forEach(article => {
+                    if (source === 'all' || article.getAttribute('data-source') === source) {
+                        article.style.display = 'block';
+                    } else {
+                        article.style.display = 'none';
+                    }
+                });
+            }
+        </script>
+    </body>
+    </html>
