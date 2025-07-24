@@ -225,7 +225,7 @@ sources:
     active: true
     
   electrive.com:
-    url: "www.electrive.com/feed/"
+    url: "https://www.electrive.com/feed/"
     name: "Electrive"
     category: "ev"
     language: "en"

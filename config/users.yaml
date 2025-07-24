@@ -1,111 +1,57 @@
----
-# RSS Media Bus - Конфигурация пользователей v3.0
-
-all_sources_rss_user:
-  name: "All Sources RSS Monitor"
-  description: "Пользователь с полным доступом ко всем источникам"
+smm_gov_redaktor:
   active: true
-  registration_method: "telegram_bot"
-  created_at: "2025-07-20T18:10:00.000000"
-  
-  # Telegram настройки
-  telegram:
-    chat_id: "-1002883915655"      # ID супергруппы с префиксом -100
-    bot_token: "7000553711:AAGa4WKSGJGheJcydtR9V0L9vnxlK89Twgo"
-    topic_id: null
-    enabled: true                  # Включен, токен настроен
-  
-  # Источники для мониторинга (все 49 источников)
-  sources:
-    - tass.ru
-    - ria.ru
-    - rbc.ru
-    - lenta.ru
-    - interfax.ru
-    - vedomosti.ru
-    - vedomosti_news.ru
-    - vedomosti_issue.ru
-    - rbc_full.ru
-    - gazeta.ru
-    - rg.ru
-    - mk.ru
-    - kp.ru
-    - rt.com
-    - life.ru
-    - aif.ru
-    - 360.ru
-    - pnp.ru
-    - ura.news
-    - iz.ru
-    - pv-magazine.com
-    - ecopolitic.com.ua
-    - euronews_green.ru
-    - ecopravda.ru
-    - electrive.com
-    - renewableenergyworld.com
-    - electrek.co
-    - bloomberg_green.com
-    - bloomberg_esg.com
-    - mit_climate.edu
-    - scitechdaily.com
-    - esgtoday.com
-    - esgnews.com
-    - bbc_science.co.uk
-    - nytimes_environment.com
-    - grist.org
-    - guardian_environment.com
-    - nature_climate.com
-    - eco-business.com
-    - eu-startups.com
-    - ecowatch.com
-    - happyeconews.com
-    - mongabay.com
-    - sustainablebrands.com
-    - techcrunch_climate.com
-    - verge_climate.com
-  
-  # Цепочка обработки (без фильтрации - все новости)
-  processors:
-    - name: "telegram_sender"
-      config:
-        format: "markdown"
-        include_source: true
-        max_preview_length: 300
-        send_all: true
-
-test_user_new:
-  name: "Test User для проверки системы"
-  description: "Тестовый пользователь для проверки масштабируемости"
-  active: true
-  registration_method: "manual"
-  created_at: "2025-07-20T19:55:00.000000"
-  
-  # Telegram настройки (заглушка - не рабочий)
-  telegram:
-    chat_id: "-1001234567890"      # Тестовый чат
-    bot_token: "123456789:TEST_BOT_TOKEN"  # Тестовый токен
-    topic_id: null
-    enabled: false                 # ВЫКЛЮЧЕН - нет реального бота
-  
-  # Источники (только несколько для теста)  
-  sources:
-    - tass.ru
-    - ria.ru
-    - rbc.ru
-  
-  # Процессоры с фильтрацией
-  processors:
-    - name: "keyword_filter"
-      config:
-        keywords: 
-          - "тест"
-          - "важно" 
-          - "срочно"
-        mode: "include"
-        min_matches: 1
-        
-    - name: "telegram_sender"
-      config:
-        format: "markdown"
-        include_source: true
-        max_preview_length: 200
+  telegram_configs:
+    main_all_sources:
+      enabled: true
+      bot_token: "7000553711:AAGa4WKSGJGheJcydtR9V0L9vnxlK89Twgo"
+      chat_id: -1002883915655
+      topics_mapping:
+        360.ru: 19667
+        aif.ru: 19665
+        bbc.co.uk: 19637
+        bbc_science.co.uk: 19701
+        bloomberg_esg.com: 19691
+        bloomberg_green.com: 19689
+        eco-business.com: 19711
+        ecopolitic.com.ua: 19677
+        ecopravda.ru: 19681
+        ecowatch.com: 19715
+        electrek.co: 19687
+        electrive.com: 19683
+        esgnews.com: 19699
+        esgtoday.com: 19697
+        eu-startups.com: 19713
+        euronews_green.ru: 19679
+        gazeta.ru: 19653
+        grist.org: 19705
+        guardian_environment.com: 19707
+        happyeconews.com: 19717
+        interfax.ru: 19643
+        iz.ru: 19673
+        kp.ru: 19659
+        lenta.ru: 19641
+        life.ru: 19663
+        mit_climate.edu: 19693
+        mk.ru: 19657
+        mongabay.com: 19719
+        nature_climate.com: 19709
+        nytimes_environment.com: 19703
+        pnp.ru: 19669
+        pv-magazine.com: 19675
+        rbc.ru: 19633
+        rbc_full.ru: 19651
+        renewableenergyworld.com: 19685
+        reuters.com: 19635
+        rg.ru: 19655
+        ria.ru: 19631
+        rt.com: 19661
+        scitechdaily.com: 19695
+        sustainablebrands.com: 19721
+        tass.ru: 19629
+        techcrunch.com: 19639
+        techcrunch_climate.com: 19723
+        ura.news: 19671
+        vedomosti.ru: 19645
+        vedomosti_issue.ru: 19649
+        vedomosti_news.ru: 19647
+        verge_climate.com: 19725

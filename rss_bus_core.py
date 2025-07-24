@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 # Импорты наших модулей
 from core.source_manager import AsyncRSSParser
 from core.database import DatabaseManager
+from core.hot_reload import HotReloadManager
 
 class RSSBusCore:
     def __init__(self):
@@ -21,6 +22,13 @@ class RSSBusCore:
         self.active_sources = []
         self.rss_parser = None
         self.running = False
+        
+        # Hot Reload менеджер
+        self.hot_reload = HotReloadManager("RSS Bus Core")
+        self.hot_reload.register_callback('sources', self._on_sources_reload)
+        self.hot_reload.setup_signal_handlers()
+        
+        print("🔄 Hot Reload поддержка включена (USR1 для sources.yaml)")
     
     def extract_domain_from_url(self, url):
         """Извлекает основной домен из URL для использования как feed_id"""
@@ -100,8 +108,6 @@ class RSSBusCore:
             # Создаем RSS парсер БЕЗ Telegram sender
             self.rss_parser = AsyncRSSParser(
                 db_manager=db_manager,
-                telegram_sender=None,  # НЕТ Telegram логики!
-                keywords=["новости", "важно"],  # Базовые ключевые слова для совместимости
                 config=None
             )
             
@@ -134,43 +140,20 @@ class RSSBusCore:
         
         print(f"🔄 Начинаю парсинг {len(self.active_sources)} источников...")
         
+        # Готовим все источники для РЕАЛЬНО асинхронной обработки
+        feeds_batch = []
         for source in self.active_sources:
-            try:
-                print(f"📡 {source['name'][:30]}...", end=" ")
-                
-                # Парсим RSS источник (только сохранение в БД)
-                domain_id = self.extract_domain_from_url(source['url'])
-                articles_count = await self.rss_parser.parse_all_feeds_async([(domain_id, source['url'])])
-                
-                if isinstance(articles_count, int) and articles_count >= 0:
-                    stats['available'].append({
-                        'name': source['name'],
-                        'articles': articles_count
-                    })
-                    stats['total_articles'] += articles_count
-                    
-                    if articles_count > 0:
-                        print(f"✅ {articles_count} новых")
-                    else:
-                        print("📡 без новых")
-                else:
-                    stats['unavailable'].append({
-                        'name': source['name'],
-                        'error': f"Неожиданный ответ: {type(articles_count)}"
-                    })
-                    print("❌ ошибка")
-                
-                # Пауза между источниками
-                await asyncio.sleep(1)
-                
-            except Exception as e:
-                error_msg = str(e)[:50] + "..." if len(str(e)) > 50 else str(e)
-                stats['unavailable'].append({
-                    'name': source['name'],
-                    'error': error_msg
-                })
-                stats['errors'].append(f"{source['name']}: {error_msg}")
-                print(f"❌ {error_msg}")
+            domain_id = self.extract_domain_from_url(source['url'])
+            feeds_batch.append((domain_id, source['url'], source['name']))
+        
+        print(f"🚀 Запускаю параллельную обработку {len(feeds_batch)} источников...")
+        
+        # Парсим ВСЕ источники параллельно
+        total_articles = await self.rss_parser.parse_all_feeds_async(feeds_batch)
+        
+        # Собираем статистику из парсера
+        stats['total_articles'] = total_articles
+        print(f"📊 Параллельная обработка завершена: {total_articles} новых статей")
         
         cycle_duration = (datetime.now() - cycle_start).total_seconds()
         
@@ -212,6 +195,91 @@ class RSSBusCore:
         except KeyboardInterrupt:
             print(f"\n🛑 Получен сигнал остановки")
             await self.stop_parsing()
+    
+    async def _on_sources_reload(self, new_sources):
+        """Callback для перезагрузки источников"""
+        print("🔄 Перезагружаю источники RSS Bus Core...")
+        
+        # Обновляем источники
+        self.sources = new_sources
+        
+        # Фильтруем активные источники
+        self.active_sources = []
+        for source_id, source_data in self.sources.items():
+            if source_data.get('active', False):
+                self.active_sources.append({
+                    'id': source_id,
+                    'name': source_data.get('name', source_id),
+                    'url': source_data.get('url'),
+                    'group': source_data.get('group', 'general')
+                })
+        
+        print(f"✅ Источники перезагружены: {len(self.sources)} всего, {len(self.active_sources)} активных")
+        
+        # Выводим обновленный список
+        for source in self.active_sources[:5]:
+            print(f"📡 {source['name']}")
+        if len(self.active_sources) > 5:
+            print(f"📡 ... и еще {len(self.active_sources) - 5} источников")
+    
+    async def add_source_dynamic(self, source_id, url, name=None, group="user_added"):
+        """Динамическое добавление источника без перезапуска"""
+        try:
+            # Проверяем что источник не существует
+            if source_id in self.sources:
+                print(f"⚠️ Источник {source_id} уже существует")
+                return False
+            
+            # Добавляем в память
+            self.sources[source_id] = {
+                'url': url,
+                'name': name or source_id,
+                'group': group,
+                'active': True,
+                'added_dynamically': True
+            }
+            
+            # Добавляем в активные источники
+            self.active_sources.append({
+                'id': source_id,
+                'name': name or source_id,
+                'url': url,
+                'group': group
+            })
+            
+            # Сохраняем в файл для постоянства
+            await self._save_sources_to_file()
+            
+            print(f"✅ Динамически добавлен источник: {name or source_id}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Ошибка добавления источника {source_id}: {e}")
+            return False
+    
+    async def _save_sources_to_file(self):
+        """Сохранение источников в YAML файл"""
+        try:
+            import yaml
+            from pathlib import Path
+            
+            sources_file = Path("config/sources.yaml")
+            
+            # Читаем текущий файл для сохранения структуры
+            with open(sources_file, 'r', encoding='utf-8') as f:
+                data = yaml.safe_load(f)
+            
+            # Обновляем секцию sources
+            data['sources'] = self.sources
+            
+            # Записываем обратно
+            with open(sources_file, 'w', encoding='utf-8') as f:
+                yaml.dump(data, f, ensure_ascii=False, default_flow_style=False, indent=2)
+                
+            print("💾 Конфигурация источников сохранена")
+            
+        except Exception as e:
+            print(f"⚠️ Не удалось сохранить конфигурацию: {e}")
     
     async def stop_parsing(self):
         """Остановка парсинга"""
