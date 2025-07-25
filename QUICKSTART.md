@@ -178,6 +178,16 @@ HAVING COUNT(*) > 1;
 tail -f user_service.log | grep "Отправлено статей"
 ```
 
+### Создание новых топиков
+
+```bash
+# Автоматическое создание топиков для новых источников
+python3 create_topics.py
+
+# Подробная документация
+cat docs/TELEGRAM_TOPICS.md
+```
+
 ### Диагностические команды
 
 ```bash

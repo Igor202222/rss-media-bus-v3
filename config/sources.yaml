@@ -2,539 +2,313 @@
 # RSS Media Bus - Конфигурация источников v3.0 (Доменный подход)
 
 sources:
-  # === РОССИЙСКИЕ ФЕДЕРАЛЬНЫЕ СМИ ===
   tass.ru:
     url: "https://tass.ru/rss/v2.xml"
     name: "ТАСС - Главные новости"
-    category: "news"
-    language: "ru"
-    update_interval: 300  # 5 минут (унифицировано)
     active: true
     
   ria.ru:
     url: "https://ria.ru/export/rss2/archive/index.xml"
     name: "РИА Новости"
-    category: "news"
-    language: "ru"
-    update_interval: 300  # 5 минут (унифицировано)
     active: true
     
-  # === ДЕЛОВЫЕ ИЗДАНИЯ ===
   rbc.ru:
     url: "http://static.feed.rbc.ru/rbc/logical/footer/news.rss"
     name: "РБК"
-    category: "business"
-    language: "ru"
-    update_interval: 300  # 5 минут (унифицировано)
     active: true
     
-  # === МЕЖДУНАРОДНЫЕ ИСТОЧНИКИ ===
   reuters.com:
     url: "https://www.reuters.com/pf/api/v3/content/fetch/articles-by-section-alias-or-id-v1?query=%7B%22arc-site%22%3A%22reuters%22%2C%22called_from_a_component%22%3Atrue%2C%22fetch_type%22%3A%22collection%22%2C%22section_id%22%3A%22%2Fsustainability%2F%22%2C%22size%22%3A20%7D"
     name: "Reuters Sustainability"
-    category: "sustainability"
-    language: "en"
-    update_interval: 300
     active: true
     
   bbc.co.uk:
     url: "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml?edition=int"
     name: "BBC Science & Environment"
-    category: "science"
-    language: "en"
-    update_interval: 300
     active: true
     
-  # === СПЕЦИАЛИЗИРОВАННЫЕ ===
   techcrunch.com:
     url: "https://techcrunch.com/category/climate/feed/"
     name: "TechCrunch Climate"
-    category: "climate_tech"
-    language: "en"
-    update_interval: 300  # 5 минут (унифицировано)
     active: true
 
-  # === НОВЫЕ РОССИЙСКИЕ ИСТОЧНИКИ ===
   lenta.ru:
     url: "https://lenta.ru/rss"
     name: "Лента.ру"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   interfax.ru:
     url: "https://www.interfax.ru/rss.asp"
     name: "Интерфакс"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   vedomosti.ru:
     url: "https://vedomosti.ru/rss/articles"
     name: "Ведомости - Статьи"
-    category: "business"
-    language: "ru"
-    update_interval: 300
     active: true
     
   vedomosti_news.ru:
     url: "https://vedomosti.ru/rss/news"
     name: "Ведомости - Новости"
-    category: "business"
-    language: "ru"
-    update_interval: 300
     active: true
     
   vedomosti_issue.ru:
     url: "https://vedomosti.ru/rss/issue"
     name: "Ведомости - Выпуски"
-    category: "business"
-    language: "ru"
-    update_interval: 300
     active: true
     
   rbc_full.ru:
     url: "https://rssexport.rbc.ru/rbcnews/news/30/full.rss"
     name: "РБК - Полные новости"
-    category: "business"
-    language: "ru"
-    update_interval: 300
     active: true
     
   gazeta.ru:
     url: "https://www.gazeta.ru/"
     name: "Газета.ру"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   rg.ru:
     url: "https://rg.ru/xml/index.xml"
     name: "Российская газета"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   mk.ru:
     url: "https://www.mk.ru/rss/index.xml"
     name: "Московский комсомолец"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   kp.ru:
     url: "https://www.kp.ru/rss/allsections.xml"
     name: "Комсомольская правда"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   rt.com:
     url: "https://russian.rt.com/rss"
     name: "RT на русском"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   life.ru:
     url: "https://life.ru/xml/feed.xml"
     name: "Life.ru"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   aif.ru:
     url: "https://aif.ru/rss/all.php"
     name: "Аргументы и факты"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   360.ru:
     url: "https://360.ru/rss/"
     name: "360.ru"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   pnp.ru:
     url: "https://www.pnp.ru/rss/index.xml"
     name: "Парламентская газета"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   ura.news:
     url: "https://ura.news/rss"
     name: "URA.news"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
     
   iz.ru:
     url: "https://iz.ru/xml/rss/all.xml"
     name: "Известия"
-    category: "news"
-    language: "ru"
-    update_interval: 300
     active: true
 
-  # === ЗЕЛЁНАЯ ЭНЕРГИЯ И КЛИМАТ ===
   pv-magazine.com:
     url: "https://www.pv-magazine.com/feed/"
     name: "PV Magazine"
-    category: "green_energy"
-    language: "en"
-    update_interval: 300
     active: true
     
   ecopolitic.com.ua:
     url: "https://ecopolitic.com.ua/ua/category/global_green_ua/feed/"
     name: "Эко Политика - Глобальная зелёная"
-    category: "ecology"
-    language: "ua"
-    update_interval: 300
     active: true
     
   euronews_green.ru:
     url: "https://ru.euronews.com/rss?format=mrss&level=vertical&name=green"
     name: "Euronews Green (РУ)"
-    category: "ecology"
-    language: "ru"
-    update_interval: 300
     active: true
     
   ecopravda.ru:
     url: "https://www.ecopravda.ru/feed/"
     name: "Эко Правда"
-    category: "ecology"
-    language: "ru"
-    update_interval: 300
     active: true
     
   electrive.com:
     url: "https://www.electrive.com/feed/"
     name: "Electrive"
-    category: "ev"
-    language: "en"
-    update_interval: 300
     active: true
     
   renewableenergyworld.com:
     url: "https://www.renewableenergyworld.com/feed/"
     name: "Renewable Energy World"
-    category: "green_energy"
-    language: "en"
-    update_interval: 300
     active: true
     
   electrek.co:
     url: "https://electrek.co/feed/"
     name: "Electrek"
-    category: "ev"
-    language: "en"
-    update_interval: 300
     active: true
     
   bloomberg_green.com:
     url: "https://feeds.bloomberg.com/green/news.rss"
     name: "Bloomberg Green"
-    category: "green_finance"
-    language: "en"
-    update_interval: 300
     active: true
     
   bloomberg_esg.com:
     url: "https://news.bloomberglaw.com/rss/esg"
     name: "Bloomberg ESG"
-    category: "esg"
-    language: "en"
-    update_interval: 300
     active: true
     
   mit_climate.edu:
     url: "https://news.mit.edu/rss/topic/climate-change-and-sustainability"
     name: "MIT Climate News"
-    category: "climate"
-    language: "en"
-    update_interval: 300
     active: true
     
   scitechdaily.com:
     url: "https://scitechdaily.com/news/earth/feed/"
     name: "SciTechDaily Earth"
-    category: "climate"
-    language: "en"
-    update_interval: 300
     active: true
     
   esgtoday.com:
     url: "https://www.esgtoday.com/feed/"
     name: "ESG Today"
-    category: "esg"
-    language: "en"
-    update_interval: 300
     active: true
     
   esgnews.com:
     url: "https://esgnews.com/feed/"
     name: "ESG News"
-    category: "esg"
-    language: "en"
-    update_interval: 300
     active: true
     
   bbc_science.co.uk:
     url: "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml?edition=int"
     name: "BBC Science & Environment"
-    category: "climate"
-    language: "en"
-    update_interval: 300
     active: true
     
   nytimes_environment.com:
     url: "https://www.nytimes.com/services/xml/rss/nyt/Environment.xml"
     name: "NY Times Environment"
-    category: "climate"
-    language: "en"
-    update_interval: 300
     active: true
     
   grist.org:
     url: "https://grist.org/feed/"
     name: "Grist Climate"
-    category: "climate"
-    language: "en"
-    update_interval: 300
     active: true
     
   guardian_environment.com:
     url: "https://www.theguardian.com/environment/rss"
     name: "Guardian Environment"
-    category: "climate"
-    language: "en"
-    update_interval: 300
     active: true
     
   nature_climate.com:
     url: "https://www.nature.com/nclimate.rss"
     name: "Nature Climate Change"
-    category: "climate"
-    language: "en"
-    update_interval: 300
     active: true
     
   eco-business.com:
     url: "https://www.eco-business.com/feeds/all/"
     name: "Eco Business"
-    category: "green_finance"
-    language: "en"
-    update_interval: 300
     active: true
     
   eu-startups.com:
     url: "https://www.eu-startups.com/feed/"
     name: "EU Startups"
-    category: "green_tech"
-    language: "en"
-    update_interval: 300
     active: true
     
   ecowatch.com:
     url: "https://www.ecowatch.com/rss"
     name: "EcoWatch"
-    category: "ecology"
-    language: "en"
-    update_interval: 300
     active: true
     
   happyeconews.com:
     url: "https://happyeconews.com/feed/"
     name: "Happy Eco News"
-    category: "ecology"
-    language: "en"
-    update_interval: 300
     active: true
     
   mongabay.com:
     url: "https://news.mongabay.com/feed/"
     name: "Mongabay"
-    category: "ecology"
-    language: "en"
-    update_interval: 300
     active: true
     
   sustainablebrands.com:
     url: "https://sustainablebrands.com/rss"
     name: "Sustainable Brands"
-    category: "esg"
-    language: "en"
-    update_interval: 300
     active: true
     
   techcrunch_climate.com:
     url: "https://techcrunch.com/category/climate/feed/"
     name: "TechCrunch Climate"
-    category: "green_tech"
-    language: "en"
-    update_interval: 300
     active: true
     
   verge_climate.com:
     url: "http://www.theverge.com/rss/climate-change/index.xml"
     name: "The Verge Climate"
-    category: "green_tech"
-    language: "en"
-    update_interval: 300
     active: true
 
-# === ГРУППЫ ИСТОЧНИКОВ ===
-source_groups:
-  russian_news: 
-    - tass.ru
-    - ria.ru
-    - rbc.ru
-    - lenta.ru
-    - interfax.ru
-    - gazeta.ru
-    - rg.ru
-    - mk.ru
-    - kp.ru
-    - rt.com
-    - life.ru
-    - aif.ru
-    - 360.ru
-    - pnp.ru
-    - ura.news
-    - iz.ru
-    
-  business:
-    - rbc.ru
-    - rbc_full.ru
-    - vedomosti.ru
-    - vedomosti_news.ru
-    - vedomosti_issue.ru
-    
-  international_sustainability:
-    - reuters.com
-    - bbc.co.uk
-    - techcrunch.com
-    
-  climate:
-    - reuters.com
-    - bbc.co.uk
-    - techcrunch.com
-    
-  all_russian:
-    - tass.ru
-    - ria.ru
-    - rbc.ru
-    - lenta.ru
-    - interfax.ru
-    - vedomosti.ru
-    - vedomosti_news.ru
-    - vedomosti_issue.ru
-    - rbc_full.ru
-    - gazeta.ru
-    - rg.ru
-    - mk.ru
-    - kp.ru
-    - rt.com
-    - life.ru
-    - aif.ru
-    - 360.ru
-    - pnp.ru
-    - ura.news
-    - iz.ru
-    - euronews_green.ru
-    - ecopravda.ru
-    
-  # === ЗЕЛЁНЫЕ ГРУППЫ ===
-  green_energy:
-    - pv-magazine.com
-    - renewableenergyworld.com
-    
-  electric_vehicles:
-    - electrive.com
-    - electrek.co
-    
-  climate_news:
-    - mit_climate.edu
-    - scitechdaily.com
-    - bbc_science.co.uk
-    - nytimes_environment.com
-    - grist.org
-    - guardian_environment.com
-    - nature_climate.com
-    
-  ecology:
-    - ecopolitic.com.ua
-    - euronews_green.ru
-    - ecopravda.ru
-    - ecowatch.com
-    - happyeconews.com
-    - mongabay.com
-    
-  esg_finance:
-    - bloomberg_green.com
-    - bloomberg_esg.com
-    - esgtoday.com
-    - esgnews.com
-    - eco-business.com
-    - sustainablebrands.com
-    
-  green_tech:
-    - eu-startups.com
-    - techcrunch_climate.com
-    - verge_climate.com
-    
-  all_green:
-    - pv-magazine.com
-    - ecopolitic.com.ua
-    - euronews_green.ru
-    - ecopravda.ru
-    - electrive.com
-    - renewableenergyworld.com
-    - electrek.co
-    - bloomberg_green.com
-    - bloomberg_esg.com
-    - mit_climate.edu
-    - scitechdaily.com
-    - esgtoday.com
-    - esgnews.com
-    - bbc_science.co.uk
-    - nytimes_environment.com
-    - grist.org
-    - guardian_environment.com
-    - nature_climate.com
-    - eco-business.com
-    - eu-startups.com
-    - ecowatch.com
-    - happyeconews.com
-    - mongabay.com
-    - sustainablebrands.com
-    - techcrunch_climate.com
-    - verge_climate.com
+  worldtrademarkreview.com:
+    url: "https://www.worldtrademarkreview.com/rss"
+    name: "World Trademark Review"
+    active: true
 
-# === НАСТРОЙКИ ===
-settings:
-  # Общий интервал обновления (секунды)
-  default_update_interval: 300
-  
-  # Максимальное время ожидания HTTP запросов
-  request_timeout: 30
-  
-  # Количество попыток при ошибке
-  max_retry_attempts: 3 
+  chatgptiseatingtheworld.com:
+    url: "https://chatgptiseatingtheworld.com/feed/"
+    name: "ChatGPT is Eating the World"
+    active: true
+
+  wipo.int:
+    url: "https://www.wipo.int/portal/en/rss"
+    name: "WIPO - World Intellectual Property Organization"
+    active: true
+
+  torrentfreak.com:
+    url: "https://torrentfreak.com/feed"
+    name: "TorrentFreak"
+    active: true
+
+  bloomberglaw.com:
+    url: "https://news.bloomberglaw.com/rss/ip-law"
+    name: "Bloomberg Law - IP Law"
+    active: true
+
+  uspto.gov:
+    url: "https://www.uspto.gov/rss.xml"
+    name: "USPTO - US Patent and Trademark Office"
+    active: true
+
+  rapsinews.ru:
+    url: "http://rapsinews.ru/export/rss2/index.xml"
+    name: "РАПСИ Новости"
+    active: true
+
+  copyrightlately.com:
+    url: "https://copyrightlately.com/rss"
+    name: "Copyright Lately"
+    active: true
+
+  copyright_case_act.gov:
+    url: "https://www.copyright.gov/rss/case_act.xml"
+    name: "US Copyright - Case Act"
+    active: true
+
+  copyright_creativity.gov:
+    url: "https://www.copyright.gov/rss/creativity.xml"
+    name: "US Copyright - Creativity"
+    active: true
+
+  copyright_eservice.gov:
+    url: "https://www.copyright.gov/rss/eservice.xml"
+    name: "US Copyright - eService"
+    active: true
+
+  copyright_legislation.gov:
+    url: "https://www.copyright.gov/rss/legislation.xml"
+    name: "US Copyright - Legislation"
+    active: true
+
+  copyright_events.gov:
+    url: "https://www.copyright.gov/rss/events.xml"
+    name: "US Copyright - Events"
+    active: true
+

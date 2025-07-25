@@ -55,3 +55,74 @@ smm_gov_redaktor:
         vedomosti_issue.ru: 19649
         vedomosti_news.ru: 19647
         verge_climate.com: 19725
+
+    eco_scan_bot:
+      enabled: true
+      bot_token: "8340868272:AAF_vy3lJQQcaeVClhJp35mqv4Bfae2nU4A"
+      chat_id: -1002857989808
+      topics_mapping:
+        tass.ru:
+          topic_id: 5
+          filter_config:
+            mode: "include"
+            keywords: ["эколог", "климат", "ESG", "устойчив", "углерод", "возобновля", "зеленая энергия", "электромобил", "солнечная", "ветряная", "переработ", "отход", "энерг", "нефт", "атом", "загрязн", "выброс", "токси", "радиа", "эко"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        ria.ru:
+          topic_id: 6
+          filter_config:
+            mode: "include"
+            keywords: ["эколог", "климат", "ESG", "устойчив", "углерод", "возобновля", "зеленая энергия", "электромобил", "солнечная", "ветряная", "переработ", "отход", "энерг", "нефт", "атом", "загрязн", "выброс", "токси", "радиа", "эко"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        interfax.ru:
+          topic_id: 7
+          filter_config:
+            mode: "include"
+            keywords: ["эколог", "климат", "ESG", "устойчив", "углерод", "возобновля", "зеленая энергия", "электромобил", "солнечная", "ветряная", "переработ", "отход", "энерг", "нефт", "атом", "загрязн", "выброс", "токси", "радиа", "эко"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        bbc_science.co.uk: 107
+        guardian_environment.com: 108
+        reuters.com: 109
+        nytimes_environment.com: 110
+        bloomberg_green.com: 111
+        mit_climate.edu: 112
+        bbc.co.uk: 113
+        techcrunch.com: 126
+        pv-magazine.com: 127
+        electrive.com: 128
+        renewableenergyworld.com: 129
+        electrek.co: 130
+        bloomberg_esg.com: 131
+        esgtoday.com: 132
+        esgnews.com: 133
+        eco-business.com: 134
+        sustainablebrands.com: 135
+        grist.org: 136
+        nature_climate.com: 137
+        ecowatch.com: 138
+        happyeconews.com: 139
+        mongabay.com: 140
+        verge_climate.com: 141
+        scitechdaily.com: 142
+        eu-startups.com: 143
+
+    ip_scan_bot:
+      enabled: true
+      bot_token: "7505196648:AAE7ijtIAHS91ZvQyT3OPyCH6g9N42zSWuY"
+      chat_id: -2874882097
+      topics_mapping:
+        worldtrademarkreview.com: 2
+        chatgptiseatingtheworld.com: 4
+        wipo.int: 6
+        torrentfreak.com: 8
+        bloomberglaw.com: 10
+        uspto.gov: 12
+        rapsinews.ru: 14
+        copyrightlately.com: 16
+        copyright_case_act.gov: 18
+        copyright_creativity.gov: 18
+        copyright_eservice.gov: 18
+        copyright_legislation.gov: 18
+        copyright_events.gov: 18
