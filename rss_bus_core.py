@@ -81,7 +81,9 @@ class RSSBusCore:
                         'id': source_id,
                         'name': source_data.get('name', source_id),
                         'url': source_data.get('url'),
-                        'group': source_data.get('group', 'general')
+                        'group': source_data.get('group', 'general'),
+                        'proxy_required': source_data.get('proxy_required', False),
+                        'proxy_settings': source_data.get('proxy_settings', {})
                     })
             
             print(f"✅ RSS источники загружены: {len(self.sources)} всего, {len(self.active_sources)} активных")
@@ -143,8 +145,15 @@ class RSSBusCore:
         # Готовим все источники для РЕАЛЬНО асинхронной обработки
         feeds_batch = []
         for source in self.active_sources:
-            domain_id = self.extract_domain_from_url(source['url'])
-            feeds_batch.append((domain_id, source['url'], source['name']))
+            # Используем source_id из конфигурации вместо извлечения домена
+            # Передаем полную информацию о источнике включая прокси настройки
+            feeds_batch.append((
+                source['id'], 
+                source['url'], 
+                source['name'],
+                source['proxy_required'],
+                source['proxy_settings']
+            ))
         
         print(f"🚀 Запускаю параллельную обработку {len(feeds_batch)} источников...")
         
@@ -165,12 +174,12 @@ class RSSBusCore:
         if stats['errors']:
             print(f"  ⚠️ Проблемные источники: {len(stats['errors'])}")
     
-    async def start_parsing(self, interval_minutes=5):
+    async def start_parsing(self, interval_minutes=2):  # Уменьшено с 5 до 2 минут
         """Запуск непрерывного парсинга RSS (только БД)"""
         self.running = True
         
         print(f"🚀 RSS Bus Core запущен")
-        print(f"⏰ Интервал: {interval_minutes} минут")
+        print(f"⏰ Интервал: {interval_minutes} минут (ускоренный)")
         print(f"📡 Активных источников: {len(self.active_sources)}")
         print(f"💾 Режим: только сохранение в БД")
         print(f"🔄 Для остановки: Ctrl+C")
@@ -211,7 +220,9 @@ class RSSBusCore:
                     'id': source_id,
                     'name': source_data.get('name', source_id),
                     'url': source_data.get('url'),
-                    'group': source_data.get('group', 'general')
+                    'group': source_data.get('group', 'general'),
+                    'proxy_required': source_data.get('proxy_required', False),
+                    'proxy_settings': source_data.get('proxy_settings', {})
                 })
         
         print(f"✅ Источники перезагружены: {len(self.sources)} всего, {len(self.active_sources)} активных")
@@ -244,7 +255,9 @@ class RSSBusCore:
                 'id': source_id,
                 'name': name or source_id,
                 'url': url,
-                'group': group
+                'group': group,
+                'proxy_required': False,
+                'proxy_settings': {}
             })
             
             # Сохраняем в файл для постоянства
@@ -305,7 +318,7 @@ async def main():
     
     # Запускаем парсинг
     try:
-        await bus_core.start_parsing(interval_minutes=5)
+        await bus_core.start_parsing(interval_minutes=2)  # Ускорено до 2 минут
     except KeyboardInterrupt:
         print("\n🛑 Парсинг прерван пользователем")
     

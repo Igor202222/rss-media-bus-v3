@@ -1,0 +1,89 @@
+smm_gov_redaktor:
+  active: true
+  telegram_configs:
+    main_all_sources:
+      enabled: true
+      bot_token: "7000553711:AAGa4WKSGJGheJcydtR9V0L9vnxlK89Twgo"
+      chat_id: -1002883915655
+      topics_mapping:
+        tass.ru: 19629
+        ria.ru: 19631
+        rbc.ru: 19633
+        # ... остальные топики
+      # Фильтр для основного канала - важные новости
+      filter_config:
+        mode: "include"
+        keywords: 
+          - "путин"
+          - "правительство"
+          - "экономик"
+          - "политик"
+          - "россия"
+          - "закон"
+          - "срочно"
+        case_sensitive: false
+        fields: ["title", "description"]
+
+    eco_scan_bot:
+      enabled: true
+      bot_token: "8340868272:AAF_vy3lJQQcaeVClhJp35mqv4Bfae2nU4A"
+      chat_id: -1002857989808
+      topics_mapping:
+        tass.ru: 5
+        ria.ru: 6
+        interfax.ru: 7
+      # Фильтр для эко-бота - только экологические темы
+      filter_config:
+        mode: "include"
+        keywords:
+          - "экология"
+          - "климат"
+          - "ESG"
+          - "зеленая энергия"
+          - "устойчивое развитие"
+          - "углерод"
+          - "возобновляемая энергия"
+          - "электромобиль"
+        case_sensitive: false
+        fields: ["title", "description"]
+
+# ========================================
+# Другие примеры конфигураций:
+# ========================================
+
+example_user_2:
+  active: true
+  telegram_configs:
+    tech_news:
+      enabled: true
+      bot_token: "токен"
+      chat_id: -12345
+      # Исключающий фильтр - убираем спорт и развлечения
+      filter_config:
+        mode: "exclude"
+        keywords:
+          - "футбол"
+          - "хоккей"
+          - "кино"
+          - "сериал"
+          - "шоу-бизнес"
+        case_sensitive: false
+
+    business_alerts:
+      enabled: true  
+      bot_token: "другой_токен"
+      chat_id: -67890
+      # Без фильтра - все новости
+      filter_config:
+        mode: "all"
+
+# ========================================
+# Преимущества такого подхода:
+# ========================================
+
+# ✅ Все настройки пользователя в одном месте
+# ✅ Каждый telegram_config может иметь свой фильтр  
+# ✅ Легко читать и редактировать
+# ✅ Версионирование через git
+# ✅ Hot reload поддерживается автоматически
+# ✅ Нет дублирования настроек 

@@ -1,0 +1,50 @@
+# Конфигурация прокси для RSS Media Bus
+# =====================================
+
+# Глобальные настройки прокси
+global_proxy:
+  enabled: false
+  fallback_to_direct: true  # Если прокси не работает - пробовать прямое соединение
+  timeout: 30  # Таймаут для прокси соединений (секунды)
+
+# Прокси серверы по регионам
+proxy_servers:
+  # Европейские прокси для украинских/европейских сайтов
+  europe:
+    - type: "http"
+      url: "http://vExvSw:wShhT3@190.111.161.234:9372"
+      description: "European HTTP proxy (190.111.161.234:9372)"
+      status: "configured"
+    
+    - type: "socks5" 
+      url: null  # Будет настроено: "socks5://username:password@proxy-server:port"
+      description: "European SOCKS5 proxy"
+      status: "not_configured"
+  
+  # Американские прокси
+  usa:
+    - type: "http"
+      url: null
+      description: "USA HTTP proxy" 
+      status: "not_configured"
+
+# Автоматические правила прокси (будущая функциональность)
+auto_proxy_rules:
+  enabled: false
+  # Автоматически использовать прокси для сайтов из этих доменных зон
+  domain_rules:
+    - domain: ".ua"
+      region: "europe"
+      reason: "Ukrainian sites blocked from Russia"
+    - domain: "bbc.co.uk"
+      region: "europe" 
+      reason: "BBC may be geo-blocked"
+
+# Статистика использования прокси (для мониторинга)
+statistics:
+  success_count: 0
+  failure_count: 0
+  last_used: null
+  performance_metrics:
+    avg_response_time: null
+    success_rate: null 

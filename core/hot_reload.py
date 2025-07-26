@@ -121,13 +121,7 @@ class HotReloadManager:
                 users_config = yaml.safe_load(f)
                 users = users_config if users_config else {}
             
-            # Загружаем топики mapping
-            topics_file = self.config_dir / "topics_mapping.json"
-            with open(topics_file, 'r', encoding='utf-8') as f:
-                topics_mapping = json.load(f)
-            
             logger.info(f"👥 Загружено пользователей: {len(users)}")
-            logger.info(f"🎯 Загружено топиков: {len(topics_mapping)}")
             
             # Вызываем callbacks для пользователей
             for callback in self.reload_callbacks['users']:
@@ -140,20 +134,8 @@ class HotReloadManager:
                 except Exception as e:
                     logger.error(f"❌ Ошибка в users callback: {e}")
             
-            # Вызываем callbacks для топиков
-            for callback in self.reload_callbacks['topics']:
-                try:
-                    if asyncio.iscoroutinefunction(callback):
-                        await callback(topics_mapping)
-                    else:
-                        callback(topics_mapping)
-                    logger.info("✅ Topics callback выполнен успешно")
-                except Exception as e:
-                    logger.error(f"❌ Ошибка в topics callback: {e}")
-            
             # Обновляем время модификации
             self.last_modified['users'] = datetime.now()
-            self.last_modified['topics'] = datetime.now()
             logger.info("✅ Перезагрузка users.yaml и topics завершена успешно")
             
         except Exception as e:

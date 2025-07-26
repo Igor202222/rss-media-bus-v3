@@ -21,8 +21,7 @@ smm_gov_redaktor:
         esgnews.com: 19699
         esgtoday.com: 19697
         eu-startups.com: 19713
-        euronews_green.ru: 19679
-        gazeta.ru: 19653
+        rbc_full.ru: 19651
         grist.org: 19705
         guardian_environment.com: 19707
         happyeconews.com: 19717
@@ -39,7 +38,7 @@ smm_gov_redaktor:
         pnp.ru: 19669
         pv-magazine.com: 19675
         rbc.ru: 19633
-        rbc_full.ru: 19651
+
         renewableenergyworld.com: 19685
         reuters.com: 19635
         rg.ru: 19655
@@ -49,7 +48,7 @@ smm_gov_redaktor:
         sustainablebrands.com: 19721
         tass.ru: 19629
         techcrunch.com: 19639
-        techcrunch_climate.com: 19723
+        # techcrunch_climate.com: удален как дубликат URL
         ura.news: 19671
         vedomosti.ru: 19645
         vedomosti_issue.ru: 19649
@@ -107,17 +106,21 @@ smm_gov_redaktor:
         verge_climate.com: 141
         scitechdaily.com: 142
         eu-startups.com: 143
+        ecopolitic.com.ua: 239
+        euronews_green.ru: 242
+        bbc.co.uk: 244
 
     ip_scan_bot:
       enabled: true
       bot_token: "7505196648:AAE7ijtIAHS91ZvQyT3OPyCH6g9N42zSWuY"
-      chat_id: -2874882097
+      chat_id: -1002874882097
       topics_mapping:
         worldtrademarkreview.com: 2
         chatgptiseatingtheworld.com: 4
         wipo.int: 6
         torrentfreak.com: 8
-        bloomberglaw.com: 10
+        bloomberg_ip.com: 10
+        bloomberglaw.com: 10  # старые статьи (обратная совместимость)
         uspto.gov: 12
         rapsinews.ru: 14
         copyrightlately.com: 16
@@ -126,3 +129,156 @@ smm_gov_redaktor:
         copyright_eservice.gov: 18
         copyright_legislation.gov: 18
         copyright_events.gov: 18
+
+    vape_monitoring_bot:
+      enabled: true
+      bot_token: "8175805347:AAHtjUsCjWvpW_TtAluYXcK90-xg7AhB-tE"
+      chat_id: -1002503558861
+      topics_mapping:
+        tass.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        ria.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        rbc.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        lenta.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        interfax.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        vedomosti.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        vedomosti_news.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        vedomosti_issue.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        rbc_full.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        rg.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        mk.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        kp.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        rt.com:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        life.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        aif.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        360.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        pnp.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        ura.news:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        iz.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        ecopravda.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]
+        rapsinews.ru:
+          topic_id: 83
+          filter_config:
+            mode: "include"
+            keywords: ["вейп", "никотин", "сигарет", "ЭСДН", "табак", "Минздрав"]
+            case_sensitive: false
+            fields: ["title", "description"]

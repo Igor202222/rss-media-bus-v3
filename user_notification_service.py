@@ -18,7 +18,7 @@ from pathlib import Path
 from core.database import DatabaseManager
 from outputs.telegram_sender import TelegramSender
 from core.hot_reload import HotReloadManager
-from processors.keyword_filter import AdvancedKeywordFilter
+from processors.simple_keyword_filter import SimpleKeywordFilter
 
 
 class UserNotificationService:
@@ -76,15 +76,27 @@ class UserNotificationService:
                         key = f"{user_id}::{config_id}"
                         # Используем processors из telegram_config, если есть, иначе из user_data
                         processors = telegram_config.get('processors', user_data.get('processors', []))
+                        
+                        # Поддержка фильтрации по ключевым словам
+                        filter_config = telegram_config.get('filter_config')
+                        keyword_filter = None
+                        if filter_config:
+                            try:
+                                keyword_filter = SimpleKeywordFilter(filter_config)
+                                print(f"   🔍 Простой фильтр создан: режим={filter_config.get('mode')}, keywords={len(filter_config.get('keywords', []))}")
+                            except Exception as e:
+                                print(f"   ⚠️ Ошибка создания фильтра: {e}")
+                        
                         self.users[key] = {
                             'name': user_data.get('name', user_id),
                             'telegram_sender': telegram_sender,
                             'sources': telegram_config.get('sources', user_data.get('sources', [])),
                             'topics_mapping': topics_mapping,
                             'processors': processors,
+                            'keyword_filter': keyword_filter,
                             'chat_id': telegram_config['chat_id']
                         }
-                        # Устанавливаем время на текущий момент чтобы обрабатывать только новые статьи
+                        # Устанавливаем время на текущий момент чтобы обрабатывать только новые статьи  
                         self.last_check_time[key] = datetime.now(pytz.timezone('Europe/Moscow'))
                         print(f"✅ Пользователь {user_id} / {config_id} настроен")
                         print(f"   📱 Chat ID: {telegram_config['chat_id']}")
@@ -120,13 +132,48 @@ class UserNotificationService:
     
     def should_send_article_to_user(self, article, user_key):
         user_data = self.users.get(user_key, {})
-        # Проверка источника: если список источников задан, но идентификаторы не совпадают,
-        # применяем более гибкое сравнение (домен → домен).
+        
+        # Проверка источника: если список источников задан, но идентификаторы не совпадают
         user_sources = user_data.get('sources', [])
         if user_sources:
             art_source = str(article['feed_id']).lower()
             if art_source not in user_sources:
                 return False, []
+        
+        # ПРИОРИТЕТ 1: Фильтр для конкретного источника (новая система)
+        source_filter = self.get_filter_for_source(user_key, article['feed_id'])
+        if source_filter:
+            try:
+                should_send, filter_metadata = source_filter.filter_article(article)
+                matched_keywords = filter_metadata.get('matched_keywords', [])
+                if should_send:
+                    self.logger.debug(f"🔍 Фильтр источника ПРОПУСТИЛ: {filter_metadata.get('filter_reason', 'unknown')}")
+                    return True, matched_keywords
+                else:
+                    self.logger.debug(f"🚫 Фильтр источника ЗАБЛОКИРОВАЛ: {filter_metadata.get('filter_reason', 'unknown')}")
+                    return False, []
+            except Exception as e:
+                self.logger.error(f"❌ Ошибка фильтрации источника: {e}")
+                # При ошибке фильтра источника - проверяем общий фильтр
+        
+        # ПРИОРИТЕТ 2: Общий фильтр пользователя (обратная совместимость)
+        keyword_filter = user_data.get('keyword_filter')
+        if keyword_filter:
+            try:
+                should_send, filter_metadata = keyword_filter.filter_article(article)
+                matched_keywords = filter_metadata.get('matched_keywords', [])
+                if should_send:
+                    self.logger.debug(f"🔍 Общий фильтр ПРОПУСТИЛ: {filter_metadata.get('filter_reason', 'unknown')}")
+                    return True, matched_keywords
+                else:
+                    self.logger.debug(f"🚫 Общий фильтр ЗАБЛОКИРОВАЛ: {filter_metadata.get('filter_reason', 'unknown')}")
+                    return False, []
+            except Exception as e:
+                self.logger.error(f"❌ Ошибка общей фильтрации: {e}")
+                # При ошибке фильтра - пропускаем статью
+                return True, []
+        
+        # СТАРАЯ ФИЛЬТРАЦИЯ: Поддержка legacy processors для совместимости
         processors = user_data.get('processors', [])
         for processor in processors:
             if processor.get('name') == 'keyword_filter':
@@ -144,6 +191,8 @@ class UserNotificationService:
                     elif mode == 'exclude':
                         if len(matched_keywords) >= min_matches:
                             return False, matched_keywords
+        
+        # Если фильтров нет - пропускаем статью
         return True, []
     
     def check_keywords_in_article(self, article, keywords):
@@ -179,12 +228,41 @@ class UserNotificationService:
         
         return None
     
+    def get_filter_for_source(self, user_key, source_id):
+        """Получает filter_config для конкретного источника"""
+        user_data = self.users.get(user_key, {})
+        topics_mapping = user_data.get('topics_mapping', {})
+        
+        # Проверяем прямое совпадение
+        if source_id in topics_mapping:
+            topic = topics_mapping[source_id]
+            if isinstance(topic, dict):
+                filter_config = topic.get('filter_config')
+                if filter_config:
+                    return SimpleKeywordFilter(filter_config)
+        
+        # Fallback: ищем по частичному совпадению домена
+        for mapped_source, topic_data in topics_mapping.items():
+            if mapped_source in source_id or source_id in mapped_source:
+                if isinstance(topic_data, dict):
+                    filter_config = topic_data.get('filter_config')
+                    if filter_config:
+                        return SimpleKeywordFilter(filter_config)
+        
+        return None
+    
     async def send_article_to_user(self, article, user_key, matched_keywords=None):
         user_data = self.users.get(user_key)
         if not user_data:
             return False
         telegram_sender = user_data['telegram_sender']
         topic_id = self.get_topic_id_for_source(user_key, article['feed_id'])
+        
+        # Проверяем есть ли настроенный топик для этого источника
+        if topic_id is None:
+            self.logger.debug(f"🚫 Пропускаю {article['feed_id']} для {user_key}: топик не настроен")
+            return False  # Не отправляем если нет настроенного топика
+        
         try:
             title = article.get('title', 'Без заголовка')
             description = article.get('description', '')
@@ -221,7 +299,7 @@ class UserNotificationService:
             
             # Конвертируем в UTC для запроса к БД
             utc_time = last_check.astimezone(pytz.UTC)
-            self.logger.debug(f"Querying articles after {utc_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            self.logger.debug(f"Querying articles after {utc_time.strftime('%Y-%m-%d %H:%M:%S')} UTC (was {last_check.strftime('%Y-%m-%d %H:%M:%S')} Moscow)")
             
             # Получаем новые статьи, сортированные по времени публикации (ХРОНОЛОГИЧЕСКИЙ ПОРЯДОК!)
             query = """
@@ -277,34 +355,38 @@ class UserNotificationService:
             return 0
 
     async def _send_articles_batch_async(self, articles_to_send, user_key):
-        """Асинхронная массовая отправка статей БЕЗ блокировки"""
+        """Оптимальная отправка статей с максимальным использованием лимитов Telegram"""
+        if not articles_to_send:
+            return 0
+            
+        self.logger.info(f"📤 Начинаю отправку {len(articles_to_send)} статей (оптимально)")
         sent_count = 0
         
-        # Создаем задачи для параллельной отправки
+        # Создаем задачи для всех статей
         tasks = []
         for article, matched_keywords in articles_to_send:
             task = self.send_article_to_user(article, user_key, matched_keywords)
             tasks.append(task)
         
-        # Отправляем все статьи параллельно с ограничением
-        semaphore = asyncio.Semaphore(5)  # Максимум 5 одновременных запросов
-        
-        async def send_with_limit(task):
-            async with semaphore:
+        # Отправляем с точным соблюдением лимита: 20 сообщений/минуту = 3 секунды на сообщение
+        for i, task in enumerate(tasks):
+            try:
                 success = await task
                 if success:
-                    return 1
-                await asyncio.sleep(0.1)  # Минимальная задержка между запросами
-                return 0
-        
-        # Выполняем все задачи параллельно
-        results = await asyncio.gather(*[send_with_limit(task) for task in tasks], return_exceptions=True)
-        
-        # Подсчитываем успешные отправки
-        for result in results:
-            if isinstance(result, int):
-                sent_count += result
-        
+                    sent_count += 1
+                    self.logger.info(f"✅ {i+1}/{len(tasks)}: статья отправлена")
+                else:
+                    self.logger.warning(f"❌ {i+1}/{len(tasks)}: ошибка отправки")
+                
+                # Точная задержка 3 секунды (кроме последнего сообщения)
+                if i < len(tasks) - 1:
+                    await asyncio.sleep(3.0)  # 20 сообщений/минуту
+                    
+            except Exception as e:
+                self.logger.error(f"❌ {i+1}/{len(tasks)}: исключение {e}")
+
+        total_time = len(articles_to_send) * 3
+        self.logger.info(f"📊 Отправлено {sent_count}/{len(articles_to_send)} статей за ~{total_time//60}м {total_time%60}с")
         return sent_count
     
     async def notification_cycle(self):
@@ -313,35 +395,45 @@ class UserNotificationService:
             return
         cycle_start = datetime.now()
         total_sent = 0
-        self.logger.info(f"🔔 Проверяю новые статьи для {len(self.users)} telegram-конфигов...")
+        
+        # ПАРАЛЛЕЛЬНАЯ обработка всех пользователей одновременно
+        tasks = []
         for user_key in self.users:
+            task = self.check_articles_for_user(user_key)
+            tasks.append(task)
+        
+        # Ждем завершения ВСЕХ пользователей параллельно
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for i, (user_key, result) in enumerate(zip(self.users.keys(), results)):
             try:
-                user_name = self.users[user_key]['name']
-                self.logger.info(f"👤 {user_key[:30]}...")
-                sent_count = await self.check_articles_for_user(user_key)
-                total_sent += sent_count
-                if sent_count > 0:
-                    self.logger.info(f"📤 {sent_count} статей")
+                if isinstance(result, Exception):
+                    self.logger.error(f"❌ Ошибка для {user_key}: {result}")
                 else:
-                    self.logger.info("📡 без новых")
-                await asyncio.sleep(1)
+                    sent_count = result
+                    total_sent += sent_count
+                    # Логируем только если есть новые статьи
+                    if sent_count > 0:
+                        user_name = self.users[user_key]['name']
+                        self.logger.info(f"📬 {user_name}: отправлено {sent_count} статей")
             except Exception as e:
-                self.logger.error(f"❌ Ошибка для {user_key}: {e}")
+                self.logger.error(f"❌ Ошибка обработки результата для {user_key}: {e}")
+        
         cycle_duration = (datetime.now() - cycle_start).total_seconds()
-        self.logger.info(f"\n📊 Цикл уведомлений завершен за {cycle_duration:.1f}с:")
-        self.logger.info(f"  👥 telegram-конфигов: {len(self.users)}")
-        self.logger.info(f"  📤 Отправлено статей: {total_sent}")
+        if total_sent > 0:
+            self.logger.info(f"🎯 Цикл завершен: {total_sent} статей за {cycle_duration:.1f}с")
+        else:
+            self.logger.debug(f"🔄 Цикл завершен: новых статей нет ({cycle_duration:.1f}с)")
     
-    async def start_notifications(self, interval_minutes=2):
-        """Запуск сервиса уведомлений"""
+    async def start_notifications(self, interval_minutes=1):  # Ускорено с 2 до 1 минуты
+        """Запуск сервиса уведомлений с оптимальным интервалом"""
         self.running = True
         
         print(f"🔔 User Notification Service запущен")
-        print(f"⏰ Интервал: {interval_minutes} минут")
+        print(f"⏰ Интервал проверки: {interval_minutes} минут (ускоренный)")
         print(f"👥 Активных пользователей: {len(self.users)}")
-        print(f"📱 Режим: уведомления в Telegram")
-        print(f"🔄 Для остановки: Ctrl+C")
-        print("=" * 50)
+        print(f"📱 Активных telegram-конфигов: {sum(len(user.get('telegram_configs', {})) for user in self.users.values() if isinstance(user, dict))}")
+        print("=" * 60)
         
         try:
             while self.running:
@@ -397,13 +489,24 @@ class UserNotificationService:
                     # Получаем topics_mapping из конфига
                     topics_mapping = telegram_config.get('topics_mapping', {})
                     
+                    # Поддержка фильтрации по ключевым словам (для горячей перезагрузки)
+                    filter_config = telegram_config.get('filter_config')
+                    keyword_filter = None
+                    if filter_config:
+                        try:
+                            keyword_filter = AdvancedKeywordFilter(filter_config)
+                            print(f"   🔍 Фильтр перезагружен: режим={filter_config.get('mode')}, keywords={len(filter_config.get('keywords', []))}")
+                        except Exception as e:
+                            print(f"   ⚠️ Ошибка создания фильтра: {e}")
+                    
                     key = f"{user_id}::{config_id}"
                     self.users[key] = {
                         'name': user_data.get('name', user_id),
                         'telegram_sender': telegram_sender,
-                        'sources': user_data.get('sources', []),
+                        'sources': telegram_config.get('sources', user_data.get('sources', [])),
                         'topics_mapping': topics_mapping,
                         'processors': telegram_config.get('processors', user_data.get('processors', [])),
+                        'keyword_filter': keyword_filter,
                         'chat_id': telegram_config['chat_id']
                     }
                     
@@ -455,8 +558,8 @@ async def main():
     
     # Запускаем сервис уведомлений
     try:
-        # 0.5 мин = 30 секунд, как задумано изначально
-        await service.start_notifications(interval_minutes=0.5)
+        # 1 минута вместо 2 минут - более быстрые уведомления
+        await service.start_notifications(interval_minutes=1)
     except KeyboardInterrupt:
         print("\n🛑 Сервис прерван пользователем")
     

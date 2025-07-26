@@ -7,13 +7,16 @@ from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 import traceback
+from .error_manager import ErrorManager
 
 class AsyncRSSParser:
     def __init__(self, db_manager, config=None):
         self.db = db_manager
         self.config = config
-        self.error_counts = {}
-        self.last_error_time = {}
+        
+        # Новая система управления ошибками
+        self.error_manager = ErrorManager(db_manager)
+        
         print(f"🧐 AsyncRSSParser: только парсинг и сохранение в БД")
 
     async def parse_all_feeds_async(self, feeds):
@@ -41,17 +44,22 @@ class AsyncRSSParser:
         ) as session:
             tasks = []
             for i, feed_info in enumerate(feeds):
-                # Поддержка как старого формата (id, url), так и нового (id, url, name)
-                if len(feed_info) >= 3:
+                # Поддержка разных форматов: старый (id, url), новый (id, url, name), с прокси (id, url, name, proxy_required, proxy_settings)
+                if len(feed_info) >= 5:
+                    feed_id, feed_url, feed_name, proxy_required, proxy_settings = feed_info
+                elif len(feed_info) >= 3:
                     feed_id, feed_url, feed_name = feed_info[0], feed_info[1], feed_info[2]
+                    proxy_required, proxy_settings = False, {}
                 else:
                     feed_id, feed_url = feed_info[0], feed_info[1]
                     feed_name = self._extract_domain_name(feed_url)
+                    proxy_required, proxy_settings = False, {}
                 
-                if self.should_skip_feed(feed_url):
-                    print(f"⏸️ Пропускаю {feed_name}")
+                should_skip, reason = self.error_manager.should_skip_feed(feed_url)
+                if should_skip:
+                    print(f"⏸️ {feed_name}: {reason}")
                     continue
-                task = self._parse_single_feed_async(session, feed_id, feed_url, feed_name)
+                task = self._parse_single_feed_async(session, feed_id, feed_url, feed_name, proxy_required, proxy_settings)
                 tasks.append(task)
             if not tasks:
                 print("⚠️ Нет доступных источников для обработки")
@@ -70,7 +78,8 @@ class AsyncRSSParser:
             for i, feed_info in enumerate(feeds):
                 feed_name = feed_info[2] if len(feed_info) >= 3 else self._extract_domain_name(feed_info[1])
                 
-                if self.should_skip_feed(feed_info[1]):
+                should_skip, _ = self.error_manager.should_skip_feed(feed_info[1])
+                if should_skip:
                     continue
                     
                 if task_index < len(results):
@@ -80,11 +89,14 @@ class AsyncRSSParser:
                     if isinstance(result, Exception):
                         print(f"❌ {feed_name}: {str(result)[:50]}")
                         failed_feeds += 1
-                        self._record_feed_error(feed_info[1])
+                        self.error_manager.record_error(
+                            feed_info[1], feed_name, "exception", 
+                            error_message=str(result)[:100]
+                        )
                     else:
                         total_new_articles += result
                         successful_feeds += 1
-                        self._reset_feed_errors(feed_info[1])
+                        self.error_manager.reset_errors(feed_info[1])
                         if result > 0:
                             print(f"✅ {feed_name}: {result} новых")
                         else:
@@ -93,59 +105,134 @@ class AsyncRSSParser:
             print(f"📰 Всего новых статей: {total_new_articles}")
             return total_new_articles
 
-    async def _parse_single_feed_async(self, session, feed_id, feed_url, feed_name=None):
+    async def _parse_single_feed_async(self, session, feed_id, feed_url, feed_name=None, proxy_required=False, proxy_settings=None):
         if not feed_name:
             feed_name = self._extract_domain_name(feed_url)
+        
+        if proxy_settings is None:
+            proxy_settings = {}
             
         max_retries = 3
         retry_delay = 2
-        for attempt in range(max_retries):
-            try:
-                if attempt > 0:
-                    print(f"📡 {feed_name} попытка {attempt + 1}/{max_retries}")
-                async with session.get(feed_url) as response:
-                    if response.status == 404:
-                        print(f"❌ {feed_name}: RSS не найден (404)")
-                        return 0
-                    elif response.status >= 400:
-                        raise aiohttp.ClientResponseError(
-                            request_info=response.request_info,
-                            history=response.history,
-                            status=response.status
+        
+        # Определяем нужно ли использовать прокси
+        current_session = session
+        proxy_session = None
+        
+        if proxy_required and proxy_settings.get('url'):
+            print(f"🌐 {feed_name}: используем прокси ({proxy_settings.get('region', 'unknown')})")
+            # Создаем отдельную сессию с прокси
+            timeout = aiohttp.ClientTimeout(total=30)
+            connector = aiohttp.TCPConnector(
+                limit=5,
+                limit_per_host=2,
+                force_close=True,
+                enable_cleanup_closed=True
+            )
+            headers = {
+                'User-Agent': 'RSS Media Monitor/2.0 (Proxy)',
+                'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive'
+            }
+            proxy_session = aiohttp.ClientSession(
+                timeout=timeout,
+                connector=connector,
+                headers=headers
+            )
+            current_session = proxy_session
+        
+        try:
+            for attempt in range(max_retries):
+                try:
+                    if attempt > 0:
+                        print(f"📡 {feed_name} попытка {attempt + 1}/{max_retries}")
+                    
+                    # Используем прокси если настроен
+                    request_kwargs = {}
+                    if proxy_required and proxy_settings.get('url'):
+                        request_kwargs['proxy'] = proxy_settings['url']
+                    
+                    async with current_session.get(feed_url, **request_kwargs) as response:
+                        if response.status == 404:
+                            print(f"❌ {feed_name}: RSS не найден (404)")
+                            self.error_manager.record_error(
+                                feed_url, feed_name, "not_found", 404, "RSS feed не найден"
+                            )
+                            return 0
+                        elif response.status >= 400:
+                            # Специальная обработка 403 ошибок
+                            if response.status == 403:
+                                alternative = self.error_manager.should_try_alternative_method(feed_url, 403)
+                                print(f"🚫 {feed_name}: 403 Forbidden (рекомендация: {alternative})")
+                                self.error_manager.record_error(
+                                    feed_url, feed_name, "forbidden", 403, 
+                                    f"Доступ запрещен, попробуйте: {alternative}"
+                                )
+                            else:
+                                self.error_manager.record_error(
+                                    feed_url, feed_name, "http_error", response.status, 
+                                    f"HTTP {response.status}"
+                                )
+                            
+                            raise aiohttp.ClientResponseError(
+                                request_info=response.request_info,
+                                history=response.history,
+                                status=response.status
+                            )
+                        content = await response.text(encoding='utf-8', errors='ignore')
+                        if not content or len(content) < 100:
+                            raise Exception("Получен пустой или слишком короткий ответ")
+                    
+                    loop = asyncio.get_event_loop()
+                    with ThreadPoolExecutor(max_workers=2) as executor:
+                        feed_data = await loop.run_in_executor(
+                            executor, self._safe_parse_feed, content
                         )
-                    content = await response.text(encoding='utf-8', errors='ignore')
-                    if not content or len(content) < 100:
-                        raise Exception("Получен пустой или слишком короткий ответ")
-                loop = asyncio.get_event_loop()
-                with ThreadPoolExecutor(max_workers=2) as executor:
-                    feed_data = await loop.run_in_executor(
-                        executor, self._safe_parse_feed, content
+                    if not feed_data or not feed_data.entries:
+                        print(f"⚠️ {feed_name}: RSS пустой")
+                        return 0
+                    feed_title = getattr(feed_data.feed, 'title', self._extract_domain_name(feed_url))
+                    # Обновляем информацию о ленте по URL, чтобы таблица feeds содержала запись
+                    self.db.update_feed_info(feed_url=feed_url, title=feed_title)
+                    new_articles_count = await self._process_articles_async(
+                        feed_id, feed_url, feed_data.entries
                     )
-                if not feed_data or not feed_data.entries:
-                    print(f"⚠️ {feed_name}: RSS пустой")
-                    return 0
-                feed_title = getattr(feed_data.feed, 'title', self._extract_domain_name(feed_url))
-                # Обновляем информацию о ленте по URL, чтобы таблица feeds содержала запись
-                self.db.update_feed_info(feed_url=feed_url, title=feed_title)
-                new_articles_count = await self._process_articles_async(
-                    feed_id, feed_url, feed_data.entries
-                )
-                return new_articles_count
-            except asyncio.TimeoutError:
-                print(f"⏰ {feed_name}: таймаут (попытка {attempt + 1})")
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(retry_delay)
-                    retry_delay *= 2
-            except aiohttp.ClientError as e:
-                print(f"🌐 {feed_name}: сетевая ошибка")
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(retry_delay)
-                    retry_delay *= 2
-            except Exception as e:
-                print(f"❌ {feed_name}: ошибка парсинга")
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(retry_delay)
-                    retry_delay *= 2
+                    return new_articles_count
+                except asyncio.TimeoutError:
+                    print(f"⏰ {feed_name}: таймаут (попытка {attempt + 1})")
+                    if attempt == max_retries - 1:  # Последняя попытка
+                        self.error_manager.record_error(
+                            feed_url, feed_name, "timeout", 
+                            error_message="Превышено время ожидания ответа"
+                        )
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay)
+                        retry_delay *= 2
+                except aiohttp.ClientError as e:
+                    print(f"🌐 {feed_name}: сетевая ошибка")
+                    if attempt == max_retries - 1:  # Последняя попытка
+                        self.error_manager.record_error(
+                            feed_url, feed_name, "network_error", 
+                            error_message=str(e)[:100]
+                        )
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay)
+                        retry_delay *= 2
+                except Exception as e:
+                    print(f"❌ {feed_name}: ошибка парсинга")
+                    if attempt == max_retries - 1:  # Последняя попытка
+                        self.error_manager.record_error(
+                            feed_url, feed_name, "parsing_error", 
+                            error_message=str(e)[:100]
+                        )
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay)
+                        retry_delay *= 2
+        finally:
+            # Закрываем прокси сессию если была создана
+            if proxy_session:
+                await proxy_session.close()
         print(f"💥 {feed_name}: все попытки исчерпаны")
         return 0
 
@@ -216,28 +303,7 @@ class AsyncRSSParser:
         except:
             return "RSS источник"
 
-    def _record_feed_error(self, feed_url):
-        self.error_counts[feed_url] = self.error_counts.get(feed_url, 0) + 1
-        self.last_error_time[feed_url] = time.time()
-
-    def _reset_feed_errors(self, feed_url):
-        if feed_url in self.error_counts:
-            del self.error_counts[feed_url]
-        if feed_url in self.last_error_time:
-            del self.last_error_time[feed_url]
-
-    def get_error_count(self, feed_url):
-        return self.error_counts.get(feed_url, 0)
-
-    def should_skip_feed(self, feed_url, max_errors=5):
-        error_count = self.get_error_count(feed_url)
-        if error_count >= max_errors:
-            last_error = self.last_error_time.get(feed_url, 0)
-            delay_minutes = min(60, 2 ** error_count)
-            if time.time() - last_error < delay_minutes * 60:
-                print(f"⏸️ Пропускаю {feed_url} на {delay_minutes} мин (ошибок: {error_count})")
-                return True
-        return False
+    # Старые методы обработки ошибок удалены - теперь используется ErrorManager
 
     def _extract_article_data(self, entry):
         try:
