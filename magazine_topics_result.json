@@ -1,0 +1,107 @@
+[
+  {
+    "name": "Futurism",
+    "source_id": "futurism.com",
+    "topic_id": 2,
+    "message_id": 3,
+    "url": "https://futurism.com/feed"
+  },
+  {
+    "name": "The Decoder",
+    "source_id": "the-decoder.com",
+    "topic_id": 4,
+    "message_id": 5,
+    "url": "https://the-decoder.com/feed/"
+  },
+  {
+    "name": "Mpost",
+    "source_id": "mpost.io",
+    "topic_id": 6,
+    "message_id": 7,
+    "url": "https://mpost.io/rss"
+  },
+  {
+    "name": "Design Milk",
+    "source_id": "design-milk.com",
+    "topic_id": 8,
+    "message_id": 9,
+    "url": "https://design-milk.com/feed/"
+  },
+  {
+    "name": "Hypebeast",
+    "source_id": "hypebeast.com",
+    "topic_id": 10,
+    "message_id": 11,
+    "url": "http://feeds.feedburner.com/hypebeast/feed"
+  },
+  {
+    "name": "Dezeen",
+    "source_id": "dezeen.com",
+    "topic_id": 12,
+    "message_id": 13,
+    "url": "https://www.dezeen.com/feed/"
+  },
+  {
+    "name": "Artnet News",
+    "source_id": "artnet.com",
+    "topic_id": 14,
+    "message_id": 15,
+    "url": "https://news.artnet.com/feed"
+  },
+  {
+    "name": "It's Nice That",
+    "source_id": "itsnicethat.com",
+    "topic_id": 16,
+    "message_id": null,
+    "url": "http://feeds2.feedburner.com/itsnicethat/SlXC"
+  },
+  {
+    "name": "Creative Bloq",
+    "source_id": "creativebloq.com",
+    "topic_id": 17,
+    "message_id": 18,
+    "url": "https://www.creativebloq.com/feed"
+  },
+  {
+    "name": "Wired",
+    "source_id": "wired.com",
+    "topic_id": 19,
+    "message_id": 20,
+    "url": "https://www.wired.com/feed"
+  },
+  {
+    "name": "Variety",
+    "source_id": "variety.com",
+    "topic_id": 21,
+    "message_id": 22,
+    "url": "https://variety.com/v/digital/feed/"
+  },
+  {
+    "name": "The Verge",
+    "source_id": "theverge_full.com",
+    "topic_id": 23,
+    "message_id": 24,
+    "url": "https://www.theverge.com/rss/index.xml"
+  },
+  {
+    "name": "The Register",
+    "source_id": "theregister.com",
+    "topic_id": 25,
+    "message_id": 26,
+    "url": "https://www.theregister.com/headlines.atom"
+  },
+  {
+    "name": "TechCrunch",
+    "source_id": "techcrunch_full.com",
+    "topic_id": 27,
+    "message_id": 28,
+    "url": "https://techcrunch.com/feed/"
+  },
+  {
+    "name": "Fast Company",
+    "source_id": "fastcompany.com",
+    "topic_id": 29,
+    "message_id": null,
+    "url": "https://www.fastcompany.com/rss"
+  }
+]

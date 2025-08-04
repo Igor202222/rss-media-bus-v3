@@ -32,9 +32,10 @@ class AsyncRSSParser:
             enable_cleanup_closed=True
         )
         headers = {
-            'User-Agent': 'RSS Media Monitor/2.0 (AsyncRSSParser)',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'application/rss+xml, application/xml, text/xml, */*',
             'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'en-US,en;q=0.9',
             'Connection': 'keep-alive'
         }
         async with aiohttp.ClientSession(

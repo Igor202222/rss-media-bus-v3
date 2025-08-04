@@ -2,17 +2,18 @@
 # RSS Media Bus - Конфигурация источников v3.1 (Обновлено 26.07.2025)
 # 
 # СТАТИСТИКА ИСТОЧНИКОВ:
-# ✅ Активных: 56 (работают стабильно)  
+# ✅ Активных: 74 (работают стабильно, включая RSS.app IP Feed)  
 # 🔴 Отключенных: 5 (проблемы с доступом или дубликаты)
-# 📊 Всего настроенных: 61 источников
+# 📊 Всего настроенных: 79 источников
 # 
 # КАТЕГОРИИ АКТИВНЫХ ИСТОЧНИКОВ:
 # • Российские новости: 16 источников (включая rg.ru, стабильные)
 # • Международные новости: 9 источников (включая BBC)
 # • Экология и климат: 19 источников (включая Verge, обновляются реже)
 # • Технологии и IP: 12 источников
+# • Новые источники: 15 источников (технологии, дизайн, культура, ИТ)
 #
-# Последняя проверка: 26.07.2025 22:25
+# Последняя проверка: 27.07.2025 12:00 (добавлены новые источники)
 
 sources:
   tass.ru:
@@ -366,6 +367,110 @@ sources:
   #   name: "Комсомольская правда"
   #   active: false
   #   problem: "RSS не отвечает"
+
+  # =================================
+  # НОВЫЕ ИСТОЧНИКИ (добавлены автоматически)
+  # =================================
+  
+  futurism.com:
+    url: "https://futurism.com/feed"
+    name: "Futurism - Future Tech"
+    active: true
+    
+  the-decoder.com:
+    url: "https://the-decoder.com/feed/"
+    name: "The Decoder - AI & ML News"
+    active: true
+    
+  mpost.io:
+    url: "https://mpost.io/rss"
+    name: "Mpost - Design & Creative"
+    active: true
+    
+  design-milk.com:
+    url: "https://design-milk.com/feed/"
+    name: "Design Milk"
+    active: true
+    proxy_required: true
+    proxy_settings:
+      type: "http"
+      url: "http://vExvSw:wShhT3@190.111.161.234:9372"
+      region: "europe"
+    
+  hypebeast.com:
+    url: "http://feeds.feedburner.com/hypebeast/feed"
+    name: "Hypebeast - Fashion & Culture"
+    active: true
+    
+  dezeen.com:
+    url: "https://www.dezeen.com/feed/"
+    name: "Dezeen - Architecture & Design"
+    active: true
+    proxy_required: true
+    proxy_settings:
+      type: "http"
+      url: "http://vExvSw:wShhT3@190.111.161.234:9372"
+      region: "europe"
+    
+  artnet.com:
+    url: "https://news.artnet.com/feed"
+    name: "Artnet News"
+    active: true
+    
+  itsnicethat.com:
+    url: "http://feeds2.feedburner.com/itsnicethat/SlXC"
+    name: "It's Nice That - Creative Industries"
+    active: true
+    
+  creativebloq.com:
+    url: "https://www.creativebloq.com/feed"
+    name: "Creative Bloq"
+    active: true
+    
+  wired.com:
+    url: "https://www.wired.com/feed"
+    name: "Wired - Technology"
+    active: true
+    
+  variety.com:
+    url: "https://variety.com/v/digital/feed/"
+    name: "Variety Digital"
+    active: true
+    
+  theverge_full.com:
+    url: "https://www.theverge.com/rss/index.xml"
+    name: "The Verge - Full Feed"
+    active: true
+    
+  theregister.com:
+    url: "https://www.theregister.com/headlines.atom"
+    name: "The Register - IT News"
+    active: true
+    
+  techcrunch_full.com:
+    url: "https://techcrunch.com/feed/"
+    name: "TechCrunch - Full Feed"
+    active: true
+    
+  fastcompany.com:
+    url: "https://www.fastcompany.com/rss"
+    name: "Fast Company - Innovation"
+    active: true
+
+  google_alerts_feed_1.com:
+    url: "https://www.google.ru/alerts/feeds/01039709105922949059/11873315488548510550"
+    name: "Google Alerts Feed 1"
+    active: true
+
+  google_alerts_feed_2.com:
+    url: "https://www.google.ru/alerts/feeds/17410650032171902066/11382366220635620981"
+    name: "Google Alerts Feed 2" 
+    active: true
+
+  rss_app_ip_feed.com:
+    url: "https://rss.app/feeds/ebN5JoedM5Qdx8XA.xml"
+    name: "RSS.app IP Feed"
+    active: true
 
   # ✅ ИСПРАВЛЕННЫЕ ПРОБЛЕМЫ (26.07.2025):
   # • techcrunch_climate.com - удален как дубликат
