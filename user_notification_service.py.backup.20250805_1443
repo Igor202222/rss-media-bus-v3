@@ -19,7 +19,6 @@ from core.database import DatabaseManager
 from outputs.telegram_sender import TelegramSender
 from core.hot_reload import HotReloadManager
 from processors.simple_keyword_filter import SimpleKeywordFilter
-from core.translator import AutoTranslator
 
 
 class UserNotificationService:
@@ -95,8 +94,7 @@ class UserNotificationService:
                             'topics_mapping': topics_mapping,
                             'processors': processors,
                             'keyword_filter': keyword_filter,
-                            'chat_id': telegram_config['chat_id'],
-                            'translation_settings': telegram_config.get('translation_settings', {})
+                            'chat_id': telegram_config['chat_id']
                         }
                         # Устанавливаем время на текущий момент чтобы обрабатывать только новые статьи  
                         self.last_check_time[key] = datetime.now(pytz.timezone('Europe/Moscow'))
@@ -206,8 +204,8 @@ class UserNotificationService:
             'case_sensitive': False,
             'fields': ['title', 'description', 'content']
         }
-        simple_filter = SimpleKeywordFilter(filter_config)
-        should_send, metadata = simple_filter.filter_article(article)
+        advanced_filter = AdvancedKeywordFilter(filter_config)
+        should_send, metadata = advanced_filter.filter_article(article)
         return metadata.get('matched_keywords', []) if should_send else []
     
     def get_topic_id_for_source(self, user_key, source_id):
@@ -291,22 +289,6 @@ class UserNotificationService:
             print(f"❌ Ошибка отправки статьи пользователю {user_key}: {e}")
             return False
     
-    def should_translate_source(self, user_key, source_id):
-        """Определяет нужно ли переводить конкретный источник для пользователя"""
-        user_data = self.users.get(user_key, {})
-        topics_mapping = user_data.get('topics_mapping', {})
-        
-        # Ищем настройки для этого источника
-        source_config = topics_mapping.get(source_id)
-        
-        if isinstance(source_config, dict):
-            # Новый формат с настройками перевода
-            return source_config.get('translate', False)
-        else:
-            # Старый формат - используем автоопределение по источнику
-            russian_sources = ['habr', 'vc.ru', 'tass.ru', 'ria.ru', 'rbc.ru', 'lenta.ru', 'mk.ru', 'kp.ru', 'iz.ru', 'aif.ru', '360.ru', 'pnp.ru', 'ura.news', 'life.ru', 'rt.com', 'rg.ru', 'vedomosti', 'interfax.ru', 'lenta.ru', 'rapsinews.ru', 'ecopravda.ru']
-            return not any(rus_source in source_id.lower() for rus_source in russian_sources)
-    
     async def check_articles_for_user(self, user_key):
         """Проверка новых статей для пользователя с настоящей асинхронностью"""
         try:
@@ -340,46 +322,22 @@ class UserNotificationService:
                 self.logger.info(f"Sent 0 articles for {user_key}")
                 return 0
             
-            # Фильтруем, переводим и подготавливаем статьи для отправки
+            # Фильтруем и подготавливаем статьи для отправки
             articles_to_send = []
-            user_data = self.users[user_key]
-
-            # Получаем настройки перевода для этого бота
-            translation_settings = user_data.get('translation_settings', {})
-
-            # Создаем конфиг переводчика
-            translation_config = {
-                'enabled': bool(translation_settings),
-                'provider': translation_settings.get('provider', 'yandex'),
-                'source_lang': translation_settings.get('source_lang', 'auto'),
-                'target_lang': translation_settings.get('target_lang', 'ru'),
-                'fields': translation_settings.get('fields', ['title', 'description'])
-            }
-
-            async with AutoTranslator(translation_config) as translator:
-                for article_row in articles:
-                    article = {
-                        'id': article_row[0],
-                        'feed_id': article_row[1],
-                        'title': article_row[2],
-                        'link': article_row[3],
-                        'description': article_row[4],
-                        'tags': json.loads(article_row[5]) if article_row[5] else [],
-                        'published_date': article_row[6],
-                        'added_date': article_row[7]
-                    }
-                    
-                    # Сначала фильтруем
-                    should_send, matched_keywords = self.should_send_article_to_user(article, user_key)
-                    if should_send:
-                        # Проверяем нужен ли перевод для ЭТОГО источника
-                        if self.should_translate_source(user_key, article['feed_id']):
-                            # Переводим только если настройки источника говорят "переводить"
-                            translated_article = await translator.translate_article(article)
-                            articles_to_send.append((translated_article, matched_keywords))
-                        else:
-                            # Не переводим - добавляем как есть
-                            articles_to_send.append((article, matched_keywords))
+            for article_row in articles:
+                article = {
+                    'id': article_row[0],
+                    'feed_id': article_row[1],
+                    'title': article_row[2],
+                    'link': article_row[3],
+                    'description': article_row[4],
+                    'tags': json.loads(article_row[5]) if article_row[5] else [],
+                    'published_date': article_row[6],
+                    'added_date': article_row[7]
+                }
+                should_send, matched_keywords = self.should_send_article_to_user(article, user_key)
+                if should_send:
+                    articles_to_send.append((article, matched_keywords))
             
             # МАССОВАЯ АСИНХРОННАЯ ОТПРАВКА без блокировки
             if articles_to_send:
@@ -536,7 +494,7 @@ class UserNotificationService:
                     keyword_filter = None
                     if filter_config:
                         try:
-                            keyword_filter = SimpleKeywordFilter(filter_config)
+                            keyword_filter = AdvancedKeywordFilter(filter_config)
                             print(f"   🔍 Фильтр перезагружен: режим={filter_config.get('mode')}, keywords={len(filter_config.get('keywords', []))}")
                         except Exception as e:
                             print(f"   ⚠️ Ошибка создания фильтра: {e}")
@@ -549,8 +507,7 @@ class UserNotificationService:
                         'topics_mapping': topics_mapping,
                         'processors': telegram_config.get('processors', user_data.get('processors', [])),
                         'keyword_filter': keyword_filter,
-                        'chat_id': telegram_config['chat_id'],
-                        'translation_settings': telegram_config.get('translation_settings', {})
+                        'chat_id': telegram_config['chat_id']
                     }
                     
                     # Восстанавливаем время последней проверки или ставим текущее

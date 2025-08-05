@@ -223,9 +223,7 @@ smm_gov_redaktor:
           translate: true
         ecopolitic.com.ua: 239
         euronews_green.ru: 242
-        bbc.co.uk:
-          topic_id: 244
-          translate: true
+        bbc.co.uk: 244
 
     ip_scan_bot:
       enabled: true
